@@ -109,6 +109,8 @@ newdata=[-0.7185573 ,-0.73641497, 2.2446876 , 1.0520973 , -1.1191831 ,0. ,  1. ,
 newdata=np.array(data_x_numeric)[1]
 explainer.predict_survival_function(newdata=newdata,times=times)
 
+explainer.predict_survival_function(newdata=newdata,times=4)
+
 newdata=np.array(data_x_numeric)[1:2]
 explainer.predict_survival_function(newdata=newdata,times=times)
 
@@ -120,3 +122,5 @@ explainer.predict_cumulative_hazard_function(newdata=newdata,times=times)
 
 
 
+
+explainer.predict_survival_function(newdata=newdata,times=times)
