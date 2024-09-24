@@ -37,13 +37,21 @@ class explainer():
 
 		if sf is not None:
 			self.sf = sf
-		else:
+		elif "sksurv" in model.__module__:
 			self.sf = model.predict_survival_function
+		elif "pycox" in model.__module__:
+			self.sf = model.predict_surv_df
+		else:
+			raise ValueError("Unsupported model")
 
 		if chf is not None:
 			self.chf = chf
-		else:
+		elif "sksurv" in model.__module__:
 			self.chf = model.predict_cumulative_hazard_function
+		elif "pycox" in model.__module__:
+			self.chf = model.predict_cumulative_hazards
+		else:
+			raise ValueError("Unsupported model")
 
 		if times is None:
 			survival_times = label[:, 0]

@@ -196,7 +196,7 @@ def SurvLIME(explainer, data, label, n_nearest=100, id=None):
 		interest_point = data[id]
 	n_feats = data.shape[1]
 	radius = 1
-	neibourg_points = interest_point + random_ball(n_nearest, n_feats, radius)
+	neibourg_points = (interest_point + random_ball(n_nearest, n_feats, radius)).astype(interest_point.dtype)
 
 	model_chf = predict(explainer, neibourg_points, unique_times, type="chf")
 	distance_weights = 1 - np.sqrt(np.linalg.norm(neibourg_points - interest_point, axis=1) / radius)
@@ -208,7 +208,6 @@ def SurvLIME(explainer, data, label, n_nearest=100, id=None):
 
 	SurvLIME_res = np.stack([data.columns.values, coefs]).T
 	SurvLIME_df = pd.DataFrame(data = SurvLIME_res, columns=["feats", "coefs"]).reset_index(drop=True)
-
 	return SurvLIME_df
 
 def plot_SurvLIME(res, id=0):
