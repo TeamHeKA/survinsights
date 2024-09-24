@@ -71,7 +71,7 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 
 	return ICE_df
 
-def plot_ICE(res, id=0):
+def plot_ICE(res, explained_feature = "", id=0):
 	"""
 	Visualize the ICE results
 
@@ -97,7 +97,7 @@ def plot_ICE(res, id=0):
 	ax.set_ylim(0, 1)
 	plt.xlabel("")
 	plt.ylabel("Survival prediction")
-	plt.title("ICE for feature x0 of obsevation id = {}".format(id))
+	plt.title("ICE for feature {0} of obsevation id = {1}".format(explained_feature, id))
 	plt.colorbar(cmap, orientation='horizontal', label='Time')
 	plt.show()
 
