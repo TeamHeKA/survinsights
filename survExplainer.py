@@ -105,8 +105,6 @@ class SurvExplainer:
 
             return surv
     
-
-
     def predict_survival_function_pycox(self, newdata, times):
 
         if len(newdata.shape)==1:
@@ -154,4 +152,7 @@ class SurvExplainer:
 
 
 
-   
+
+
+
+

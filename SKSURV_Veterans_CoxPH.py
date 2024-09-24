@@ -96,6 +96,10 @@ model.predict_survival_function(newdata)
 np.array(data_x_numeric)
 
 
+TEST=model.predict_survival_function(data_x_numeric)
+TEST[1](4)
+
+
 explainer=SurvExplainer(model=model,data=data_x_numeric,y= data_y, from_package="Sksurv")
 
 
