@@ -40,10 +40,15 @@ def predict(explainer, data, times=None, type="survival"):
 		times = np.unique(times)
 	n_times = len(times)
 
+	if isinstance(data, pd.DataFrame):
+		feats = data.copy(deep=True).values
+	else:
+		feats = data
+
 	if type == "survival":
-		preds = explainer.sf(data)
+		preds = explainer.sf(feats)
 	elif type == "chf":
-		preds = explainer.chf(data)
+		preds = explainer.chf(feats)
 	else:
 		raise ValueError("Unsupported type")
 
@@ -52,25 +57,33 @@ def predict(explainer, data, times=None, type="survival"):
 		for i in range(n_samples):
 			for j in range(n_times):
 				time_j = times[j]
-				pred_df.loc[len(pred_df)] = [i, time_j, preds[i](time_j)]
-				#surv_pred_i = preds[i].y
-				#time_pred_i = preds[i].x
-				#idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
-				#pred_ij = surv_pred_i[idx_time_ij]
-				#pred_df.loc[len(pred_df)] = [i, time_j, pred_ij]
+				if "sksurv" in explainer.model.__module__:
+					pred_df.loc[len(pred_df)] = [i, time_j, preds[i](time_j)]
+				elif "pycox" in explainer.model.__module__:
+					surv_pred_i = preds[i].values
+					time_pred_i = preds.index.values
+					idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
+					pred_ij = surv_pred_i[idx_time_ij]
+					pred_df.loc[len(pred_df)] = [i, time_j, pred_ij]
+				else:
+					raise ValueError("Unsupported model")
 
 		return pred_df
 
 	else:
 		pred = np.zeros((n_samples, n_times))
-		for j in range(n_times):
-			time_j = times[j]
-			for i in range(n_samples):
-				pred[i, j] = preds[i](time_j)
-			#surv_pred_i = preds[i].y
-				#time_pred_i = preds[i].x
-				#idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
-				#pred[i, j] = surv_pred_i[idx_time_ij]
+		for i in range(n_samples):
+			for j in range(n_times):
+				time_j = times[j]
+				if "sksurv" in explainer.model.__module__:
+					pred[i, j] = preds[i](time_j)
+				elif "pycox" in explainer.model.__module__:
+					surv_pred_i = preds[i].values
+					time_pred_i = preds.index.values
+					idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
+					pred[i, j] = surv_pred_i[idx_time_ij]
+				else:
+					raise ValueError("Unsupported model")
 
 		return pred
 
