@@ -83,7 +83,7 @@ def predict_cumulative_hazard_function_pycox(model, newdata):
     elif len(newdata.shape)==2 and newdata.shape[0]==1:
         results.append(-np.log(predict_survival_function_pycox(model,newdata)))
     else:
-        for i in range(len(newdata.shape[0])):
+        for i in range(newdata.shape[0]):
             results.append(-np.log(predict_survival_function_pycox(model,newdata[i,:])))
     
     return results
