@@ -12,19 +12,28 @@ Clone the repository, then inside the folder, use a `virtualenv` to install the 
 git clone https://github.com/lucasducrot/survInterpretability.git
 cd survInterpretability
 
+# Install packages with Pip
 # If your default interpreter is Python3:
 virtualenv .venv_surv_interpret
 # If your default interpreter is Python2, you can explicitly target Python3 with:
-virtualenv -p python3.7 .venv_surv_interpret
+virtualenv -p python3.12 .venv_surv_interpret
 
 source .venv_surv_interpret/bin/activate
 ```
 Then, to download all required modules and initialize the project run the following commands:
 ```shell script
-pip install -r requirements.txt
-pip install -e .
+pip3 install -r requirements.txt
+pip3 install -e .
 ```
 The second command installs the project as a package, making the main module importable from anywhere.
+
+
+# Install packages with conda
+conda env create -n .venv_surv_interpret python=3.12 -f requirements_conda.yml
+
+conda activate .venv_surv_interpret
+
+
 Then, to add the virtual eviroment to jupyter kernel:
 ```shell script
 python -m ipykernel install --user --name=".venv_surv_interpret"

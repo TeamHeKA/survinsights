@@ -132,3 +132,6 @@ explainer.predict_survival_function(newdata=x_test[1:2,:],times=times)
 
 explainer.predict_cumulative_hazard_function(newdata=x_test[1:2,:],times=times)
 
+TEST=explainer.predict_survival_function_pycox(newdata=x_test)
+TEST[0](6)
+TEST[0](5)

@@ -39,11 +39,10 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 		times = np.unique(times)
 	n_times = len(times)
 	if isinstance(data, pd.DataFrame):
-		feats = data.values.astype(float)
+		feats = data.values
 	else:
 		feats = data
 	surv_pred = predict(explainer, feats, times)
-
 	survival_time =label[:, 0]
 	survival_indicator = label[:, 1].astype(bool)
 	res = np.zeros(n_times)
