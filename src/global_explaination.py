@@ -7,6 +7,7 @@ sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind'
 
 from src.local_explaination import individual_conditional_expectation
 from src import performance
+from src.prediction import predict
 
 def partial_dependence_plots(explainer, selected_features, n_sel_samples = 100,
                                        n_grid_points = 50, type = "survival"):
@@ -146,3 +147,104 @@ def plot_PFI(res):
 	plt.legend(loc='lower left', ncol=3)
 	plt.title("Permutation feature importance")
 	plt.show()
+
+def accumulated_local_effects_plots(explainer, selected_features, type = "survival"):
+	"""
+	Compute accumulated local effects plots (ALE)
+
+	Parameters
+	----------
+	explainer : `class`
+		A Python class used to explain the survival model
+	"""
+
+	data = explainer.data.copy(deep=True).sort_values(by=[selected_features])
+	var_values = data[selected_features].values
+	qt_list = np.arange(0., 1.01, 0.1)
+	grid_qt_values = np.quantile(var_values, qt_list)
+	var_values_idx = [min(np.abs(grid_qt_values - var).argmin(), len(qt_list) - 2) for var in var_values]
+	var_lower = np.array([grid_qt_values[i] for i in var_values_idx])
+	var_upper = np.array([grid_qt_values[i + 1] for i in var_values_idx])
+	data_lower, data_upper = data.copy(deep=True), data.copy(deep=True)
+	data_lower[selected_features] = var_lower
+	data_upper[selected_features] = var_upper
+
+	eval_times = np.unique(explainer.label[:, 0])[10::100]
+	if type == "survival":
+		lower_pred = predict(explainer, data_lower, eval_times)
+		upper_pred = predict(explainer, data_upper, eval_times)
+	elif type == "chf":
+		lower_pred = predict(explainer, data_lower, eval_times, "chf")
+		upper_pred = predict(explainer, data_upper, eval_times, "chf")
+	else:
+		raise ValueError("Unsupported")
+
+	n_times = len(eval_times)
+	groups = np.repeat(var_values_idx, n_times)
+	diff_pred = upper_pred.copy(deep=True)[["pred", "times"]]
+	diff_pred["pred"] = diff_pred["pred"].values - lower_pred.copy(deep=True)["pred"].values
+	diff_pred["groups"] = groups
+
+	ALE_df = diff_pred.groupby(['groups', 'times']).mean().reset_index()[["groups", "times", "pred"]]
+	group_values = np.repeat(grid_qt_values[:-1], n_times)
+	ALE_df["group_values"] = group_values
+
+	return ALE_df
+
+def plot_ALE(res, explained_feature=None):
+	"""
+    Visualize the ALE results
+
+    Parameters
+    ----------
+    res : `pd.Dataframe`
+        PFI result to be visualize
+    explained_feature : `str`
+        Name of explained feature
+    """
+	groups = np.unique(res.groups.values)
+	group_values = np.unique(res.group_values.values)
+
+	_, ax = plt.subplots(figsize=(9, 5))
+	[x.set_linewidth(2) for x in ax.spines.values()]
+	[x.set_edgecolor('black') for x in ax.spines.values()]
+
+	group_values_norm = (group_values - min(group_values)) / (max(group_values) - min(group_values))
+	n_groups= len(groups)
+	cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(group_values), True), cmap='BrBG')
+	for i in range(n_groups):
+		group = groups[i]
+		res_group = res.loc[(res.groups <= group)].groupby(['times']).sum().reset_index()[["groups", "times", "pred"]]
+		sns.lineplot(data=res_group, x="times", y="pred", color=cmap.get_cmap()(group_values_norm[i]))
+
+	plt.xlabel("Time")
+	plt.ylabel("")
+	plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax, pad=0.1)
+	plt.title("Accumulated local effects")
+	plt.show()
+
+def feature_interaction(explainer):
+	"""
+	Compute feature interaction
+
+	Parameters
+	----------
+	explainer : `class`
+		A Python class used to explain the survival model
+	"""
+
+	raise ValueError("Not supported yet")
+
+
+def functional_decomposition(explainer):
+	"""
+	Compute functional decomposition
+
+
+	Parameters
+	----------
+	explainer : `class`
+		A Python class used to explain the survival model
+	"""
+
+	raise ValueError("Not supported yet")
