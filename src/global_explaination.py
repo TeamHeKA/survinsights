@@ -73,7 +73,7 @@ def plot_PDP(res):
 	plt.xlabel("")
 	plt.ylabel("Survival prediction")
 	plt.title("DPD for feature x0")
-	plt.colorbar(cmap, orientation='horizontal', label='Time')
+	plt.colorbar(cmap, orientation='horizontal', label='Time', ax=ax)
 	plt.show()
 
 

@@ -98,7 +98,7 @@ def plot_ICE(res, explained_feature = "", id=0):
 	plt.xlabel("")
 	plt.ylabel("Survival prediction")
 	plt.title("ICE for feature {0} of obsevation id = {1}".format(explained_feature, id))
-	plt.colorbar(cmap, orientation='horizontal', label='Time')
+	plt.colorbar(cmap, orientation='horizontal', label='Time', ax=ax)
 	plt.show()
 
 
