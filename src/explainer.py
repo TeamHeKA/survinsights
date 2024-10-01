@@ -27,7 +27,7 @@ class explainer():
 
 	def __init__(self, model, data, label, times = None,
 	             time_generation="quantile", survival_fucntion  = None,
-	             cummulative_hazard_function = None):
+	             cummulative_hazard_function = None, encoders=None):
 
 		self.model = model
 		# TODO: Check the availability of data, label
@@ -66,3 +66,15 @@ class explainer():
 
 			else:
 				self.times = np.unique(survival_times)[::10]
+
+		self.encoders = encoders
+		if encoders is not None:
+			self.cate_feats = list(encoders.keys())
+			numeric_feats = []
+			for feat in data.columns.values:
+				if not np.array([cate_feat in feat for cate_feat in self.cate_feats]).any():
+					numeric_feats.append(feat)
+			self.numeric_feats = numeric_feats
+		else:
+			self.cate_feats = None
+			self.numeric_feats = list(data.columns.values)

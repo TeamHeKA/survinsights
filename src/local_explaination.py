@@ -39,20 +39,33 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
         The ICE values of selected features for desired observations
 	"""
 	data = explainer.data
-	sel_feat_idx = data.columns.get_loc(selected_features)
-	n_samples = data.shape[0]
-	n_sel_samples = min(n_sel_samples, n_samples)
-	X_sel = data[:n_sel_samples].values
-	X_feat_sel = X_sel[:, sel_feat_idx]
-	# Support uniform gird of points
-	X_feat_sel_min, X_feat_sel_max = min(X_feat_sel), max(X_feat_sel)
-	X_ext = np.repeat(X_sel, n_grid_points, axis=0)
-	X_space = np.linspace(X_feat_sel_min, X_feat_sel_max, n_grid_points)
-	X_replace = np.repeat(X_space, n_sel_samples).reshape(
-		(n_grid_points, n_sel_samples)).T.flatten()
-	X_ext[:, sel_feat_idx] = X_replace
+	if selected_features in explainer.numeric_feats:
+		sel_feat_idx = data.columns.get_loc(selected_features)
+		n_samples = data.shape[0]
+		n_sel_samples = min(n_sel_samples, n_samples)
+		X_sel = data[:n_sel_samples].values
+		X_feat_sel = X_sel[:, sel_feat_idx]
+		# Support uniform gird of points
+		X_feat_sel_min, X_feat_sel_max = min(X_feat_sel), max(X_feat_sel)
+		X_ext = np.repeat(X_sel, n_grid_points, axis=0)
+		X_space = np.linspace(X_feat_sel_min, X_feat_sel_max, n_grid_points)
+		X_replace = np.repeat(X_space, n_sel_samples).reshape((n_grid_points, n_sel_samples)).T.flatten()
+		X_ext[:, sel_feat_idx] = X_replace
 
-	data_ext = pd.DataFrame(data=X_ext, columns=data.columns.values)
+		data_ext = pd.DataFrame(data=X_ext, columns=data.columns.values)
+
+	else:
+		cate_features_ext = [feat for feat in data.columns.values if selected_features in feat]
+		sel_feat_idx = [data.columns.get_loc(feat) for feat in cate_features_ext]
+		n_samples = data.shape[0]
+		n_sel_samples = min(n_sel_samples, n_samples)
+		X_space = data[cate_features_ext].drop_duplicates().values
+		n_unique = X_space.shape[0]
+		X_sel = data[:n_sel_samples].values
+		X_ext = np.repeat(X_sel, n_unique, axis=0)
+		X_replace = np.tile(X_space, (n_sel_samples, 1))
+		X_ext[:, sel_feat_idx] = X_replace
+		data_ext = pd.DataFrame(data=X_ext, columns=data.columns.values)
 
 	if type == "survival":
 		pred = predict(explainer, data_ext)
@@ -61,17 +74,33 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 	else:
 		raise ValueError("Unsupported")
 
-	ICE_df = pd.DataFrame(columns=["id", "X", "times", "pred"])
+	if selected_features in explainer.numeric_feats:
+		ICE_df = pd.DataFrame(columns=["id", "times", "pred", selected_features])
+	else:
+		ICE_df = pd.DataFrame(columns=["id", "times", "pred"] + cate_features_ext)
+
 	for i in range(n_sel_samples):
-		for j in range(n_grid_points):
-			pred_ij = pred[pred.id == float(i * n_grid_points + j)]
-			n_pred_times = pred_ij.shape[0]
-			for k in range(n_pred_times):
-				ICE_df.loc[len(ICE_df)] = [i, X_space[j], pred_ij.times.values[k], pred_ij.pred.values[k]]
+		if selected_features not in explainer.cate_feats:
+			for j in range(n_grid_points):
+				pred_ij = pred[pred.id == float(i * n_grid_points + j)]
+				n_pred_times = pred_ij.shape[0]
+				for k in range(n_pred_times):
+						ICE_df.loc[len(ICE_df)] = [i, pred_ij.times.values[k], pred_ij.pred.values[k]] + [X_space[j]]
+		else:
+			for j in range(n_unique):
+				pred_ij = pred[pred.id == float(i * n_unique + j)]
+				n_pred_times = pred_ij.shape[0]
+				for k in range(n_pred_times):
+					ICE_df.loc[len(ICE_df)] = [i, pred_ij.times.values[k], pred_ij.pred.values[k]] + X_space[j].tolist()
+
+	if selected_features in explainer.cate_feats:
+		encoder = explainer.encoders[selected_features]
+		feat_col_sel = encoder.get_feature_names_out([selected_features]).tolist()
+		ICE_df[selected_features] = encoder.inverse_transform(ICE_df[feat_col_sel].values).flatten()
 
 	return ICE_df
 
-def plot_ICE(res, explained_feature = "", id=0):
+def plot_ICE(explainer, res, explained_feature = "", id=0):
 	"""
 	Visualize the ICE results
 
@@ -80,27 +109,30 @@ def plot_ICE(res, explained_feature = "", id=0):
     res : `pd.Dataframe`
 		ICE result to be visualize
 	"""
-	pred_times = np.unique(res.times.values)
-	n_pred_times = len(pred_times)
 
 	_, ax = plt.subplots(figsize=(9, 5))
 	[x.set_linewidth(2) for x in ax.spines.values()]
 	[x.set_edgecolor('black') for x in ax.spines.values()]
-	times_norm = (pred_times - min(pred_times)) / (max(pred_times) - min(pred_times))
-	cmap = mpl.cm.ScalarMappable(
-		norm=mpl.colors.Normalize(0.0, max(pred_times), True), cmap='BrBG')
-	for i in np.arange(0, n_pred_times):
-		res_i = res.loc[(res.id == id) & (res.times == pred_times[i])]
-		sns.lineplot(data=res_i, x="X", y="pred",
-		             color=cmap.get_cmap()(times_norm[i]))
+
+	if explained_feature in explainer.numeric_feats:
+		X_unique = np.unique(res[explained_feature].values)
+		n_unique = len(X_unique)
+		X_norm = (X_unique - min(X_unique)) / (max(X_unique) - min(X_unique))
+		cmap = mpl.cm.ScalarMappable(
+			norm=mpl.colors.Normalize(0.0, max(X_unique), True), cmap='BrBG')
+		for i in np.arange(0, n_unique):
+			res_i = res.loc[(res.id == id) & (res[explained_feature] == X_unique[i])]
+			sns.lineplot(data=res_i, x="times", y="pred", color=cmap.get_cmap()(X_norm[i]))
+
+		plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax)
+	else:
+		sns.lineplot(data=res[res.id == id], x="times", y="pred", hue=explained_feature)
 
 	ax.set_ylim(0, 1)
-	plt.xlabel("")
+	plt.xlabel("Time")
 	plt.ylabel("Survival prediction")
 	plt.title("ICE for feature {0} of obsevation id = {1}".format(explained_feature, id))
-	plt.colorbar(cmap, orientation='horizontal', label='Time', ax=ax)
 	plt.show()
-
 
 def counterfactual_explanations(explainer):
 	"""
