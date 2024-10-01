@@ -107,15 +107,18 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 		feat_importance_df = pd.DataFrame(columns=feat_importance_df_cols)
 		n_eval_times  = len(eval_times)
 
-		feats_name_org = explainer.numeric_feats + explainer.cate_feats
 		feats_name_ext = explainer.numeric_feats
-		for cate_feat_name in explainer.cate_feats:
-			cate_feat_name_list = []
-			for feat_name in feats_name:
-				if cate_feat_name in feat_name:
-					cate_feat_name_list.append(feat_name)
-			if len(cate_feat_name_list):
-				feats_name_ext.append(cate_feat_name_list)
+		if explainer.cate_feats is not None:
+			feats_name_org = explainer.numeric_feats + explainer.cate_feats
+			for cate_feat_name in explainer.cate_feats:
+				cate_feat_name_list = []
+				for feat_name in feats_name:
+					if cate_feat_name in feat_name:
+						cate_feat_name_list.append(feat_name)
+				if len(cate_feat_name_list):
+					feats_name_ext.append(cate_feat_name_list)
+		else:
+			feats_name_org = explainer.numeric_feats
 
 		for i in range(len(feats_name_ext)):
 			feat_name = feats_name_ext[i]

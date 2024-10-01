@@ -80,7 +80,7 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 		ICE_df = pd.DataFrame(columns=["id", "times", "pred"] + cate_features_ext)
 
 	for i in range(n_sel_samples):
-		if selected_features not in explainer.cate_feats:
+		if selected_features in explainer.numeric_feats:
 			for j in range(n_grid_points):
 				pred_ij = pred[pred.id == float(i * n_grid_points + j)]
 				n_pred_times = pred_ij.shape[0]
@@ -93,10 +93,11 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 				for k in range(n_pred_times):
 					ICE_df.loc[len(ICE_df)] = [i, pred_ij.times.values[k], pred_ij.pred.values[k]] + X_space[j].tolist()
 
-	if selected_features in explainer.cate_feats:
-		encoder = explainer.encoders[selected_features]
-		feat_col_sel = encoder.get_feature_names_out([selected_features]).tolist()
-		ICE_df[selected_features] = encoder.inverse_transform(ICE_df[feat_col_sel].values).flatten()
+	if explainer.cate_feats is not None:
+		if selected_features in explainer.cate_feats:
+			encoder = explainer.encoders[selected_features]
+			feat_col_sel = encoder.get_feature_names_out([selected_features]).tolist()
+			ICE_df[selected_features] = encoder.inverse_transform(ICE_df[feat_col_sel].values).flatten()
 
 	return ICE_df
 
