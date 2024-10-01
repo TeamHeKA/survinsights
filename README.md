@@ -27,14 +27,14 @@ pip3 install -e .
 ```
 The second command installs the project as a package, making the main module importable from anywhere.
 
-
-# Install packages with conda
+## Install packages with conda environment
+```shell script
 conda env create -n .venv_surv_interpret python=3.12 -f requirements_conda.yml
 
 conda activate .venv_surv_interpret
+```
 
-
-Then, to add the virtual eviroment to jupyter kernel:
+Then, to add the virtual environment to jupyter kernel:
 ```shell script
 python -m ipykernel install --user --name=".venv_surv_interpret"
 ```

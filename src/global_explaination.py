@@ -42,39 +42,42 @@ def partial_dependence_plots(explainer, selected_features, n_sel_samples = 100,
 	ICE_df = individual_conditional_expectation(explainer, selected_features,
 	                                   n_sel_samples, n_grid_points, type)
 
-	PDP_df = ICE_df.groupby(['X', 'times']).mean().reset_index()[["X", "times", "pred"]]
+	PDP_df = ICE_df.groupby([selected_features, 'times']).mean().reset_index()[[selected_features, "times", "pred"]]
 
 	return PDP_df
 
-def plot_PDP(res):
+
+def plot_PDP(explainer, res, explained_feature = ""):
 	"""
 	Visualize the PDP results
 
 	Parameters
-	----------
-	res : `pd.Dataframe`
+    ----------
+    res : `pd.Dataframe`
 		PDP result to be visualize
 	"""
-	pred_times = np.unique(res.times.values)
-	n_pred_times = len(pred_times)
 
 	_, ax = plt.subplots(figsize=(9, 5))
 	[x.set_linewidth(2) for x in ax.spines.values()]
 	[x.set_edgecolor('black') for x in ax.spines.values()]
-	times_norm = (pred_times - min(pred_times)) / (
-				max(pred_times) - min(pred_times))
-	cmap = mpl.cm.ScalarMappable(
-		norm=mpl.colors.Normalize(0.0, max(pred_times), True), cmap='BrBG')
-	for i in np.arange(0, n_pred_times):
-		res_i = res.loc[(res.times == pred_times[i])]
-		sns.lineplot(data=res_i, x="X", y="pred",
-		             color=cmap.get_cmap()(times_norm[i]))
+
+	if explained_feature in explainer.numeric_feats:
+		X_unique = np.unique(res[explained_feature].values)
+		n_unique = len(X_unique)
+		X_norm = (X_unique - min(X_unique)) / (max(X_unique) - min(X_unique))
+		cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(X_unique), True), cmap='BrBG')
+		for i in np.arange(0, n_unique):
+			res_i = res.loc[(res[explained_feature] == X_unique[i])]
+			sns.lineplot(data=res_i, x="times", y="pred", color=cmap.get_cmap()(X_norm[i]))
+
+		plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax)
+	else:
+		sns.lineplot(data=res, x="times", y="pred", hue = explained_feature)
 
 	ax.set_ylim(0, 1)
-	plt.xlabel("")
+	plt.xlabel("Time")
 	plt.ylabel("Survival prediction")
-	plt.title("DPD for feature x0")
-	plt.colorbar(cmap, orientation='horizontal', label='Time', ax=ax)
+	plt.title("DPD for feature {0}".format(explained_feature))
 	plt.show()
 
 
@@ -103,7 +106,20 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 		feat_importance_df_cols = ["feat", "times", "perf"]
 		feat_importance_df = pd.DataFrame(columns=feat_importance_df_cols)
 		n_eval_times  = len(eval_times)
-		for feat_name in feats_name:
+
+		feats_name_org = explainer.numeric_feats + explainer.cate_feats
+		feats_name_ext = explainer.numeric_feats
+		for cate_feat_name in explainer.cate_feats:
+			cate_feat_name_list = []
+			for feat_name in feats_name:
+				if cate_feat_name in feat_name:
+					cate_feat_name_list.append(feat_name)
+			if len(cate_feat_name_list):
+				feats_name_ext.append(cate_feat_name_list)
+
+		for i in range(len(feats_name_ext)):
+			feat_name = feats_name_ext[i]
+			feat_name_org = feats_name_org[i]
 			bs_perf_perm = np.zeros(n_eval_times)
 			for k in range(n_perm):
 				feat_perm = feats.copy(deep=True)[feat_name].values
@@ -116,7 +132,7 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 
 			if type == "ratio":
 				importance_ratio = bs_perf / bs_perf_perm
-				importance_ratio_data = np.stack(([feat_name] * n_eval_times, eval_times, importance_ratio)).T
+				importance_ratio_data = np.stack(([feat_name_org] * n_eval_times, eval_times, importance_ratio)).T
 				additional_ratio = pd.DataFrame(data=importance_ratio_data, columns=feat_importance_df_cols)
 				feat_importance_df = pd.concat([feat_importance_df, additional_ratio], ignore_index=False)
 
