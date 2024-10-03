@@ -72,12 +72,14 @@ def plot_PDP(explainer, res, explained_feature = ""):
 
 		plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax)
 	else:
-		sns.lineplot(data=res, x="times", y="pred", hue = explained_feature)
+		res_sorted = res.sort_values(by=explained_feature)
+		sns.lineplot(data=res_sorted, x="times", y="pred", hue = explained_feature)
 
 	ax.set_ylim(0, 1)
 	plt.xlabel("Time")
 	plt.ylabel("Survival prediction")
 	plt.title("DPD for feature {0}".format(explained_feature))
+	plt.savefig("DPD_feature_{0}.pdf".format(explained_feature), bbox_inches='tight')
 	plt.show()
 
 
@@ -163,8 +165,9 @@ def plot_PFI(res):
 
 	plt.xlabel("Times")
 	plt.ylabel("")
-	plt.legend(loc='lower left', ncol=3)
+	plt.legend(loc='lower right', ncol=2, prop = {"size": 12})
 	plt.title("Permutation feature importance")
+	plt.savefig("Permutation_feature_importance.pdf")
 	plt.show()
 
 def accumulated_local_effects_plots(explainer, selected_features, type = "survival"):

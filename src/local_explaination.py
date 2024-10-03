@@ -127,12 +127,14 @@ def plot_ICE(explainer, res, explained_feature = "", id=0):
 
 		plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax)
 	else:
-		sns.lineplot(data=res[res.id == id], x="times", y="pred", hue=explained_feature)
+		sel_res = res[res.id == id].sort_values(by=explained_feature)
+		sns.lineplot(data=sel_res, x="times", y="pred", hue=explained_feature)
 
 	ax.set_ylim(0, 1)
 	plt.xlabel("Time")
 	plt.ylabel("Survival prediction")
 	plt.title("ICE for feature {0} of obsevation id = {1}".format(explained_feature, id))
+	plt.savefig("ICE_feature_{0}_of_id={1}.pdf".format(explained_feature, id), bbox_inches='tight')
 	plt.show()
 
 def counterfactual_explanations(explainer):
