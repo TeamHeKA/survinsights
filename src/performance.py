@@ -63,7 +63,7 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 
 	return res
 
-def plot_performance(perf, metric):
+def plot_performance(perf, metric, xlim=None, ylim=None):
 	"""
 	Plot the prediction of survival model
 
@@ -78,6 +78,12 @@ def plot_performance(perf, metric):
 		The character of metric, either "brier_score", "c_index" or "auc" depending
 		on the desired metric
 
+	xlim : `tuple`
+		The x limits in size of 2.
+
+	ylim : `tuple`
+		The y limits in size of 2.
+
 	"""
 	_, ax = plt.subplots(figsize=(9, 5))
 	[x.set_linewidth(2) for x in ax.spines.values()]
@@ -85,14 +91,38 @@ def plot_performance(perf, metric):
 	sns.lineplot(data=perf, x="times", y="perf")
 	ax.set_xlim(min(perf.times.values), max(perf.times.values))
 	plt.xlabel("Times", fontsize=20)
+
+	if xlim is not None:
+		if len(xlim) != 2:
+			raise ValueError("xlim should be tuple of size 2")
+		else:
+			xlim_left, xlim_right = xlim
+	else:
+		xlim_left, xlim_right = ax.get_xlim()
+
+	if ylim is not None:
+		if len(ylim) != 2:
+			raise ValueError("ylim should be tuple of size 2")
+		else:
+			ylim_left, ylim_right = ylim
+	else:
+		if metric == "c_index":
+			ylim_left, ylim_right = 0, 1
+		elif metric == "brier_score":
+			ylim_left, ylim_right = 0, .5
+		elif metric == "auc":
+			ylim_left, ylim_right = 0, 1
+		else:
+			raise ValueError("Only support output type c_index, brier_score, auc")
+
+	ax.set_xlim(xlim_left, xlim_right)
+	ax.set_ylim(ylim_left, ylim_right)
+
 	if metric == "c_index":
-		ax.set_ylim(0, 1)
 		plt.ylabel("C-Index", fontsize=20)
 	elif metric == "brier_score":
-		ax.set_ylim(0, .5)
 		plt.ylabel("Brier score", fontsize=20)
 	elif metric == "auc":
-		ax.set_ylim(0, 1)
 		plt.ylabel("AUC", fontsize=20)
 	else:
 		raise ValueError("Only support output type c_index, brier_score, auc")
