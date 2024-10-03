@@ -48,7 +48,7 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	res = np.zeros(n_times)
 	if metric == "c_index":
 		for j in range(n_times):
-			res[j] = concordance_index_censored(survival_indicator, survival_time, surv_pred[:, j])[0]
+			res[j] = concordance_index_censored(survival_indicator, survival_time, -surv_pred[:, j])[0]
 
 	elif metric == "brier_score":
 		label_st = convert_surv_label_structarray(label)
@@ -57,7 +57,7 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	elif metric == "auc":
 		label_st = convert_surv_label_structarray(label)
 		for j in range(n_times):
-			res[j] = cumulative_dynamic_auc(label_st, label_st, surv_pred[:, j], times[j])[0]
+			res[j] = cumulative_dynamic_auc(label_st, label_st, -surv_pred[:, j], times[j])[0]
 
 	res = pd.DataFrame(data=np.stack([times, res]).T, columns=["times", "perf"])
 
