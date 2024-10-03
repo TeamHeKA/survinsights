@@ -107,6 +107,8 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 		feats_name = feats.columns.values.tolist()
 		feat_importance_df_cols = ["feat", "times", "perf"]
 		feat_importance_df = pd.DataFrame(columns=feat_importance_df_cols)
+		if eval_times is None:
+			eval_times = explainer.times
 		n_eval_times  = len(eval_times)
 
 		feats_name_ext = explainer.numeric_feats

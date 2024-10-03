@@ -55,17 +55,21 @@ class explainer():
 			raise ValueError("Unsupported model")
 
 		if times is None:
-			survival_times = label[:, 0]
+			surv_times, surv_indx = label[:, 0], label[:, 1]
 
 			if time_generation == "quantile":
 				qt_list = np.arange(0.05, 0.95, 0.05)
-				self.times = np.quantile(survival_times, qt_list)
+				self.times = np.quantile(surv_times[surv_indx==1], qt_list)
 
 			elif time_generation == "uniform":
-				self.times = np.linspace(min(survival_times), max(survival_times), 50)
+				#self.times = np.linspace(min(survival_times), max(survival_times), 50)
+				self.times = np.linspace(np.quantile(surv_times[surv_indx==1], 0.1),
+				                         np.quantile(surv_times[surv_indx==1], 0.9), 50)
 
 			else:
-				self.times = np.unique(survival_times)[::10]
+				self.times = np.unique(surv_times[surv_indx==1])[::10]
+		else:
+			self.times = times
 
 		self.encoders = encoders
 		if encoders is not None:
