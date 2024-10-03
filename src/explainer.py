@@ -9,7 +9,7 @@ class explainer():
     model
         A survival model to be explained
 
-    data :  `np.ndarray`, shape=(n_samples, n_features)
+    data :  `pd.DataFrame`, shape=(n_samples, n_features)
         Covariates of new observations need to be explained
 
     label :  `np.ndarray`, shape=(n_samples, 2), default = None
