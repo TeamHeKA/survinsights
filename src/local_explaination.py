@@ -4,6 +4,7 @@ from sksurv.nonparametric import nelson_aalen_estimator
 from scipy.optimize import minimize
 from src.prediction import predict
 import seaborn as sns
+import sklearn
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
@@ -150,41 +151,61 @@ def counterfactual_explanations(explainer):
 
 	raise ValueError("Not supported yet")
 
-def random_ball(n_points, n_dims, radius=1.):
+
+def neighbor_generation(explainer, data, n_points):
 	"""
 	Create a random points supported for SurvLIME
 
-    Parameters
-    ----------
-    n_points :  `int`
-		Number of points to be generated
+	Parameters
+	----------
+	n_points :  `int`
+	    Number of points to be generated
 
-    n_dims :  `int`
-		Number of dimensions (features)
-
-    radius :  `float`, default = 1.
-		The radius
-
-    Returns
-    -------
-    res : `np.ndarray`, shape=(num_points, n_dims)
-        The generated random points
+	Returns
+	-------
+	res : `np.ndarray`, shape=(num_points, n_dims)
+	    The generated random points
 	"""
 
-	# First generate random directions by normalizing the length of a
-    # vector of random-normal values (these distribute evenly on ball).
-	rand_dir = np.random.normal(size=(n_dims, n_points))
-	rand_dir /= np.linalg.norm(rand_dir, axis=0)
-	# Second generate a random radius with probability proportional to
-	# the surface area of a ball with a given radius.
-	rand_radius = np.random.random(n_points) ** (1 / n_dims)
+	np.random.seed(seed=0)
+	n_feats = data.shape[1]
+	neighbor = np.random.normal(size=(n_points, n_feats))
+	neighbor_df = pd.DataFrame(data=neighbor, columns=data.columns.values)
+	scale_neighbor_df = neighbor_df.copy(deep=True)
+	data_features = explainer.numeric_feats + explainer.cate_feats
+	training_data = explainer.data
+	scaler = sklearn.preprocessing.StandardScaler(with_mean=False)
+	scaler.fit(training_data)
+	scale = scaler.scale_
+	mean = scaler.mean_
+	idx_ext = 0
+	for idx in range(len(data_features)):
+		feature = data_features[idx]
+		if feature in explainer.numeric_feats:
+			sample = neighbor_df[feature].values * scale[idx] + mean[idx]
+			neighbor_df[feature] = sample
+			scale_neighbor_df[feature] = sample
+			idx_ext += 1
+		else:
+			cate_features_ext = [feat for feat in data.columns.values if feature in feat]
+			training_data_counts = training_data.groupby(cate_features_ext).value_counts().reset_index(name='counts')
+			cate_neighbor = training_data_counts.sample(n_points, replace=True, weights="counts", random_state=1)[cate_features_ext].values
+			#cate_neighbor = training_data_counts.sample(n_points, replace=True, weights="counts")[cate_features_ext].values
+			neighbor_df[cate_features_ext] = cate_neighbor
+			scale_neighbor_df[cate_features_ext] = cate_neighbor
+			scale[idx_ext : idx_ext + len(cate_features_ext)] = 1
+			mean[idx_ext : idx_ext + len(cate_features_ext)] = 0
 
-	# Return the list of random (direction & length) points.
-	res = radius * (rand_dir * rand_radius).T
+			scale_neighbor_df.loc[~(scale_neighbor_df[cate_features_ext] == data[cate_features_ext].values).all(axis='columns'), cate_features_ext] = 0
+			idx_ext += len(cate_features_ext)
 
-	return res
+	neighbor_df.loc[0] = data.values
+	scale_neighbor_df.loc[0] = data.values
+	scale_neighbor_df = (scale_neighbor_df - mean) / scale
 
-def SurvLIME(explainer, data, label, n_nearest=100, id=None):
+	return neighbor_df, scale_neighbor_df
+
+def SurvLIME(explainer, data, n_nearest=100, id=None):
 	"""
 	Compute SurvLIME
 
@@ -196,9 +217,6 @@ def SurvLIME(explainer, data, label, n_nearest=100, id=None):
 
 	data :  `np.ndarray`, shape=(n_samples, n_features)
 		New observations for which predictions need to be explained
-
-	label : `np.ndarray`, shape=(n_samples, 2)
-		Survival labels of new observations
 
 	n_nearest : `int`, default = 100
 		Number of neighbor points of the interest observations to be generated
@@ -212,37 +230,44 @@ def SurvLIME(explainer, data, label, n_nearest=100, id=None):
 	def objective(x, model_chf, baseline_chf, neibourg_points, distance_weights, straightening_weights, unique_times):
 
 		dt = unique_times[1:] - unique_times[:-1]
-		tmp = np.sum((straightening_weights[:, :-1] ** 2) * ((np.log(model_chf[:, :-1]) - np.log(baseline_chf[:-1]) - neibourg_points.dot(x).reshape((-1, 1))) ** 2 * dt), axis=1)
+		tmp = np.sum((straightening_weights[:, :-1] ** 2) * (((np.log(model_chf[:, :-1]) - np.log(baseline_chf[:-1]) - neibourg_points.dot(x).reshape((-1, 1))) ** 2) * dt), axis=1)
 		f_x = np.sum(distance_weights * tmp)
 
 		return f_x
 
+	sup = 1 + 1e-4
+	label = explainer.label
 	surv_time = label[:, 0]
 	surv_ind = label[:, 1].astype('bool')
 	# cumulative hazard function
 	unique_times, baseline_chf = nelson_aalen_estimator(surv_ind, surv_time)
+	baseline_chf = baseline_chf + sup
 
 	# TODO: Update for all individuals
 	if id is None:
 		id = 0
-	if isinstance(data, pd.DataFrame):
-		interest_point = data.iloc[id].values
-	else:
-		interest_point = data[id]
+	interest_point = data.iloc[[id]]
 	n_feats = data.shape[1]
-	radius = 1
-	neibourg_points = (interest_point + random_ball(n_nearest, n_feats, radius)).astype(interest_point.dtype)
+	neighbor_df, scale_neighbor_df = neighbor_generation(explainer, interest_point, n_nearest)
+	neibourg_points = neighbor_df.values
+	scale_neighbor = scale_neighbor_df.values
 
 	model_chf = predict(explainer, neibourg_points, unique_times, type="chf")
-	distance_weights = 1 - np.sqrt(np.linalg.norm(neibourg_points - interest_point, axis=1) / radius)
+	model_chf = model_chf + sup
+	distances = np.linalg.norm(scale_neighbor - scale_neighbor[0], axis=1)
+	kernel_width = np.sqrt(n_feats) * 0.75
+	distance_weights = np.sqrt(np.exp(-(distances ** 2) / (kernel_width ** 2)))
 	straightening_weights = model_chf / np.log(model_chf)
 
-	init_point = np.random.normal(size = n_feats)
+	init_point = np.zeros(n_feats)
 	args = (model_chf, baseline_chf, neibourg_points, distance_weights, straightening_weights, unique_times)
-	coefs = minimize(objective, init_point, args=args, method='BFGS')["x"]
+	coefs = minimize(objective, init_point, args=args, method='BFGS', options={'gtol': 1e-8})["x"]
 
 	SurvLIME_res = np.stack([data.columns.values, coefs]).T
 	SurvLIME_df = pd.DataFrame(data = SurvLIME_res, columns=["feats", "coefs"]).reset_index(drop=True)
+	SurvLIME_df.coefs = SurvLIME_df.coefs.values.astype(float)
+	SurvLIME_df["FI"] = SurvLIME_df.coefs.values * interest_point.values.flatten()
+
 	return SurvLIME_df
 
 def plot_SurvLIME(res, id=0):
@@ -260,9 +285,9 @@ def plot_SurvLIME(res, id=0):
 	[x.set_edgecolor('black') for x in ax.spines.values()]
 
 	colors = ['g' if c >= 0 else 'r' for c in res.coefs.values]
-	sns.barplot(data=res, y="feats", x="coefs", palette=colors)
+	sns.barplot(data=res, y="feats", x="FI", palette=colors)
 
-	plt.xlabel("Coefs")
+	plt.xlabel("Local importance")
 	plt.ylabel("")
 	plt.title("SurvLIME of obsevation id = {}".format(id))
 	plt.show()
