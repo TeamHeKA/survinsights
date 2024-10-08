@@ -111,7 +111,7 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 			eval_times = explainer.times
 		n_eval_times  = len(eval_times)
 
-		feats_name_ext = explainer.numeric_feats
+		feats_name_ext = explainer.numeric_feats.copy()
 		if explainer.cate_feats is not None:
 			feats_name_org = explainer.numeric_feats + explainer.cate_feats
 			for cate_feat_name in explainer.cate_feats:
@@ -138,16 +138,27 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 				bs_perf_perm += (1 / n_perm) * tmp
 
 			if type == "ratio":
+
 				importance_ratio = bs_perf / bs_perf_perm
 				importance_ratio_data = np.stack(([feat_name_org] * n_eval_times, eval_times, importance_ratio)).T
 				additional_ratio = pd.DataFrame(data=importance_ratio_data, columns=feat_importance_df_cols)
 				feat_importance_df = pd.concat([feat_importance_df, additional_ratio], ignore_index=False)
 
+			if type == "loss":
+				bs_loss_data = np.stack(([feat_name_org] * n_eval_times, eval_times, bs_perf_perm)).T
+				additional_loss = pd.DataFrame(data=bs_loss_data, columns=feat_importance_df_cols)
+				feat_importance_df = pd.concat([feat_importance_df, additional_loss], ignore_index=False)
+
+		if type == "loss":
+			bs_loss_data = np.stack((["full_model"] * n_eval_times, eval_times, bs_perf)).T
+			additional_loss = pd.DataFrame(data=bs_loss_data, columns=feat_importance_df_cols)
+			feat_importance_df = pd.concat([feat_importance_df, additional_loss], ignore_index=False)
+
 	feat_importance_df[["times", "perf"]] = feat_importance_df[["times", "perf"]].apply(pd.to_numeric)
 
 	return feat_importance_df
 
-def plot_PFI(res):
+def plot_PFI(res, type, legend_loc='lower right'):
 	"""
 	Visualize the PFI results
 
@@ -166,8 +177,12 @@ def plot_PFI(res):
 		sns.lineplot(data=res_feat, x="times", y="perf", label=feat_name)
 
 	plt.xlabel("Times")
-	plt.ylabel("")
-	plt.legend(loc='lower right', ncol=2, prop = {"size": 12})
+	if type == "loss":
+		plt.ylabel("Brier score loss after permutation")
+	if type == "ratio":
+		plt.ylabel("Brier score ratio after permutation")
+
+	plt.legend(loc=legend_loc, ncol=2, prop = {"size": 12})
 	plt.title("Permutation feature importance")
 	plt.savefig("Permutation_feature_importance.pdf")
 	plt.show()
