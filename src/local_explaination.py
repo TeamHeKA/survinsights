@@ -272,7 +272,7 @@ def SurvLIME(explainer, data, n_nearest=100, id=None):
 
 def plot_SurvLIME(res, id=0):
 	"""
-	Visualize the ICE results
+	Visualize the SurvLIME results
 
 	Parameters
 	----------
