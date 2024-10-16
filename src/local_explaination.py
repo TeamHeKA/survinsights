@@ -7,6 +7,7 @@ import seaborn as sns
 import sklearn
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import shap
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
 def individual_conditional_expectation(explainer, selected_features, n_sel_samples = 100,
@@ -292,7 +293,7 @@ def plot_SurvLIME(res, id=0):
 	plt.title("SurvLIME of obsevation id = {}".format(id))
 	plt.show()
 
-def SurvSHAP(explainer):
+def SurvSHAP(explainer, new_data, id=None):
 	"""
 	Compute SurvSHAP
 
@@ -301,6 +302,77 @@ def SurvSHAP(explainer):
 	----------
 	explainer : `class`
 		A Python class used to explain the survival model
+
+	new_data :  `np.ndarray`, shape=(n_samples, n_features)
+		New observations for which predictions need to be explained
+
+	Returns
+	-------
+	SurvSHAP_df : `pd.Dataframe`
+		The SurvSHAP results
 	"""
 
-	raise ValueError("Not supported yet")
+	def shap_pred(X):
+		X_preprocessed = pd.DataFrame()
+		feat_org = explainer.cate_feats + explainer.numeric_feats
+		for idx in range(len(feat_org)):
+			feat = feat_org[idx]
+			if feat in explainer.cate_feats:
+				encoder = explainer.encoders[feat]
+				feat_col_sel = encoder.get_feature_names_out([feat]).tolist()
+				X_preprocessed[feat_col_sel] = encoder.transform(X[:, idx].reshape((-1, 1))).toarray()
+			else:
+				X_preprocessed[feat] = X[:, idx].flatten()
+
+		X_preprocessed = X_preprocessed[explainer.data.columns.tolist()]
+		preds = predict(explainer, X_preprocessed, type="survival").pred.values.reshape((X.shape[0], -1))
+
+		return preds
+
+	if id is None:
+		id = 0
+	interest_point = new_data.iloc[[id]]
+
+	feat_org = explainer.cate_feats + explainer.numeric_feats
+	data_org = pd.DataFrame(columns=feat_org)
+	interest_point_org = pd.DataFrame(columns=feat_org)
+	for feat in explainer.cate_feats + explainer.numeric_feats:
+		if feat in explainer.cate_feats:
+			encoder = explainer.encoders[feat]
+			feat_col_sel = encoder.get_feature_names_out([feat]).tolist()
+			data_org[feat] = encoder.inverse_transform(explainer.data[feat_col_sel].values).flatten()
+			interest_point_org[feat] = encoder.inverse_transform(interest_point[feat_col_sel].values).flatten()
+		else:
+			data_org[feat] = explainer.data[feat].values.flatten()
+			interest_point_org[feat] = interest_point[feat].values.flatten()
+
+	# Support KernelSHAP
+	shap_explainer = shap.KernelExplainer(shap_pred, data_org)
+	shap_values = shap_explainer(interest_point_org)
+	SurvSHAP_df = pd.DataFrame(data=shap_values[0].values.T, columns=feat_org)
+	SurvSHAP_df["times"] = explainer.times
+
+	return SurvSHAP_df
+
+def plot_SurvSHAP(res, id=0):
+	"""
+	Visualize the SurvSHAP results
+
+	Parameters
+	----------
+	res : `pd.Dataframe`
+		SurvSHAP result to be visualized
+	"""
+
+	_, ax = plt.subplots(figsize=(9, 5))
+	[x.set_linewidth(2) for x in ax.spines.values()]
+	[x.set_edgecolor('black') for x in ax.spines.values()]
+
+	resm = res.melt('times', var_name='cols', value_name='vals')
+	sns.lineplot(data=resm, x="times", y='vals', hue='cols', ax=ax)
+
+	plt.legend(prop = {"size": 12})
+	plt.xlabel("Time")
+	plt.ylabel("SurvSHAP(t)")
+	plt.title("SurvSHAP of obsevation id = {}".format(id))
+	plt.show()
