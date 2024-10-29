@@ -8,6 +8,8 @@ sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind'
 from src.local_explaination import individual_conditional_expectation
 from src import performance
 from src.prediction import predict
+from itertools import combinations
+from src.utils import feat_order
 
 def partial_dependence_plots(explainer, selected_features, n_sel_samples = 100,
                                        n_grid_points = 50, type = "survival"):
@@ -197,68 +199,141 @@ def accumulated_local_effects_plots(explainer, selected_features, type = "surviv
 		A Python class used to explain the survival model
 	"""
 
-	data = explainer.data.copy(deep=True).sort_values(by=[selected_features])
-	var_values = data[selected_features].values
-	qt_list = np.arange(0., 1.01, 0.1)
-	grid_qt_values = np.quantile(var_values, qt_list)
-	var_values_idx = [min(np.abs(grid_qt_values - var).argmin(), len(qt_list) - 2) for var in var_values]
-	var_lower = np.array([grid_qt_values[i] for i in var_values_idx])
-	var_upper = np.array([grid_qt_values[i + 1] for i in var_values_idx])
-	data_lower, data_upper = data.copy(deep=True), data.copy(deep=True)
-	data_lower[selected_features] = var_lower
-	data_upper[selected_features] = var_upper
+	if selected_features in explainer.numeric_feats:
+		data = explainer.data.copy(deep=True).sort_values(by=[selected_features])
+		var_values = data[selected_features].values
+		qt_list = np.arange(0., 1.01, 0.1)
+		grid_qt_values = np.quantile(var_values, qt_list)
+		var_values_idx = [np.abs(grid_qt_values[:-1] - var).argmin() for var in var_values]
+		var_lower = np.array([grid_qt_values[i] for i in var_values_idx])
+		var_upper = np.array([grid_qt_values[i + 1] for i in var_values_idx])
+		data_lower, data_upper = data.copy(deep=True), data.copy(deep=True)
+		data_lower[selected_features] = var_lower
+		data_upper[selected_features] = var_upper
 
-	eval_times = np.unique(explainer.label[:, 0])[10::100]
-	if type == "survival":
-		lower_pred = predict(explainer, data_lower, eval_times)
-		upper_pred = predict(explainer, data_upper, eval_times)
-	elif type == "chf":
-		lower_pred = predict(explainer, data_lower, eval_times, "chf")
-		upper_pred = predict(explainer, data_upper, eval_times, "chf")
+		#eval_times = np.unique(explainer.label[:, 0])[10::100]
+		eval_times = np.unique(explainer.label[:, 0])
+		if type == "survival":
+			lower_pred = predict(explainer, data_lower, eval_times)
+			upper_pred = predict(explainer, data_upper, eval_times)
+		elif type == "chf":
+			lower_pred = predict(explainer, data_lower, eval_times, "chf")
+			upper_pred = predict(explainer, data_upper, eval_times, "chf")
+		else:
+			raise ValueError("Unsupported")
+
+		n_times = len(eval_times)
+		groups_ext = np.repeat(var_values_idx, n_times)
+		diff_pred = upper_pred.copy(deep=True)[["id", "pred", "times"]]
+		diff_pred["pred"] = diff_pred["pred"].values - lower_pred.copy(deep=True)["pred"].values
+		diff_pred["groups"] = groups_ext
+
 	else:
-		raise ValueError("Unsupported")
 
-	n_times = len(eval_times)
-	groups = np.repeat(var_values_idx, n_times)
-	diff_pred = upper_pred.copy(deep=True)[["pred", "times"]]
-	diff_pred["pred"] = diff_pred["pred"].values - lower_pred.copy(deep=True)["pred"].values
-	diff_pred["groups"] = groups
+		data = explainer.data.copy(deep=True)
+		cate_features_ext = [feat for feat in data.columns.values if selected_features in feat]
+		var_values = data[cate_features_ext].values
+		grid_qt_values = feat_order(explainer, selected_features)
+		#grid_qt_values = data[cate_features_ext].drop_duplicates().values
 
-	ALE_df = diff_pred.groupby(['groups', 'times']).mean().reset_index()[["groups", "times", "pred"]]
-	group_values = np.repeat(grid_qt_values[:-1], n_times)
-	ALE_df["group_values"] = group_values
+		#TODO: Update here
+		var_values_idx = [grid_qt_values.tolist().index(var.tolist()) for var in var_values]
+		inc_idx_sel = [idx > 0 for idx in var_values_idx]
+		dec_idx_sel = [idx < len(grid_qt_values) - 1 for idx in var_values_idx]
+		feat_inc = [grid_qt_values[idx - 1] for idx in var_values_idx if idx > 0]
+		feat_dec = [grid_qt_values[idx + 1] for idx in var_values_idx if idx < len(grid_qt_values) - 1]
+		data_inc, data_dec = data.copy(deep=True)[inc_idx_sel], data.copy(deep=True)[dec_idx_sel]
+		data_inc[cate_features_ext] = feat_inc
+		data_dec[cate_features_ext] = feat_dec
 
-	return ALE_df
+		eval_times = np.unique(explainer.label[:, 0])
+		if type == "survival":
+			inc_pred = predict(explainer, data_inc, eval_times)[["id", "pred", "times"]]
+			dec_pred = predict(explainer, data_dec, eval_times)[["id", "pred", "times"]]
+			org_inc_pred = predict(explainer, data[inc_idx_sel], eval_times)[["id", "pred", "times"]]
+			org_dec_pred = predict(explainer, data[dec_idx_sel], eval_times)[["id", "pred", "times"]]
+		elif type == "chf":
+			inc_pred = predict(explainer, data_inc, eval_times, "chf")[["id", "pred", "times"]]
+			dec_pred = predict(explainer, data_dec, eval_times, "chf")[["id", "pred", "times"]]
+			org_inc_pred = predict(explainer, data[inc_idx_sel], eval_times, "chf")[["id", "pred", "times"]]
+			org_dec_pred = predict(explainer, data[dec_idx_sel], eval_times, "chf")[["id", "pred", "times"]]
+		else:
+			raise ValueError("Unsupported")
+		n_times = len(eval_times)
+		inc_idx = [idx for idx in var_values_idx if idx > 0]
+		inc_groups_ext = np.repeat(inc_idx, n_times)
+		dec_idx = [idx + 1 for idx in var_values_idx if idx < len(grid_qt_values) - 1]
+		dec_groups_ext = np.repeat(dec_idx, n_times)
+		inc_pred["pred"] = org_inc_pred["pred"].values - inc_pred["pred"].values
+		dec_pred["pred"] = dec_pred["pred"].values - org_dec_pred["pred"].values
+		inc_pred["groups"] = inc_groups_ext
+		dec_pred["groups"] = dec_groups_ext
+		diff_pred = pd.concat([inc_pred, dec_pred], ignore_index=True)
 
-def plot_ALE(res, explained_feature=None):
+	ALE_group_df = diff_pred.groupby(['groups', 'times']).mean().reset_index()[["groups", "times", "pred"]]
+	if selected_features in explainer.cate_feats:
+		tmp_df = pd.DataFrame(data= np.array([np.zeros(n_times), eval_times, np.zeros(n_times)]).T, columns=["groups", "times", "pred"])
+		ALE_group_df = pd.concat([tmp_df, ALE_group_df])
+	groups_unique = np.unique(ALE_group_df["groups"].values)
+	n_groups = len(groups_unique)
+	ALE_df = pd.DataFrame(columns=["groups", "times", "pred"])
+	for i in range(n_groups):
+		group = groups_unique[i]
+		res_group = ALE_group_df.loc[(ALE_group_df.groups <= group)].groupby(['times']).sum().reset_index()[["groups", "times", "pred"]]
+		res_group.groups = group
+		ALE_df = pd.concat([ALE_df, res_group], ignore_index=True)
+
+	if selected_features in explainer.numeric_feats:
+		group_values = np.repeat(grid_qt_values[:-1], n_times)
+	else:
+		encoder = explainer.encoders[selected_features]
+		group_values_ = encoder.inverse_transform(grid_qt_values).flatten()
+		group_values = np.repeat(group_values_, n_times)
+
+	id_df = diff_pred[["id", "groups"]].drop_duplicates()
+	ALE_df_ext = ALE_df.join(id_df.set_index('groups'), on='groups')
+	ALE_df_mean = ALE_df_ext.groupby(['times']).mean().reset_index()[["times", "pred"]]
+	ALE_df_mean = ALE_df_mean.rename(columns={"pred": "pred_mean"})
+	ALEc_df = ALE_df.join(ALE_df_mean[["times", "pred_mean"]].set_index('times'), on='times')
+	ALEc_df["alec"] = ALEc_df.pred.values - ALEc_df.pred_mean.values
+	ALEc_df["group_values"] = group_values
+
+	return ALEc_df
+
+def plot_ALE(explainer, res, explained_feature):
 	"""
     Visualize the ALE results
 
     Parameters
     ----------
     res : `pd.Dataframe`
-        PFI result to be visualize
+        ALE result to be visualized
     explained_feature : `str`
         Name of explained feature
     """
-	groups = np.unique(res.groups.values)
-	group_values = np.unique(res.group_values.values)
 
 	_, ax = plt.subplots(figsize=(9, 5))
 	[x.set_linewidth(2) for x in ax.spines.values()]
 	[x.set_edgecolor('black') for x in ax.spines.values()]
 
-	group_values_norm = (group_values - min(group_values)) / (max(group_values) - min(group_values))
-	n_groups= len(groups)
-	cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(group_values), True), cmap='BrBG')
-	for i in range(n_groups):
-		group = groups[i]
-		res_group = res.loc[(res.groups <= group)].groupby(['times']).sum().reset_index()[["groups", "times", "pred"]]
-		sns.lineplot(data=res_group, x="times", y="pred", color=cmap.get_cmap()(group_values_norm[i]))
+	if explained_feature in explainer.numeric_feats:
+		groups = np.unique(res.groups.values)
+		group_values = np.unique(res.group_values.values)
+		group_values_norm = (group_values - min(group_values)) / (max(group_values) - min(group_values))
+		n_groups= len(groups)
+		cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(group_values), True), cmap='BrBG')
+		for i in range(n_groups):
+			group = groups[i]
+			sns.lineplot(data=res.loc[(res.groups == group)], x="times", y="alec",
+						 color=cmap.get_cmap()(group_values_norm[i]))
+		plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax, pad=0.1)
+	else:
+		sns.lineplot(data=res, x="times", y="alec", hue="group_values", ax=ax)
+		plt.legend(prop={"size": 12})
+
 
 	plt.xlabel("Time")
 	plt.ylabel("")
-	plt.colorbar(cmap, orientation='vertical', label=explained_feature, ax=ax, pad=0.1)
 	plt.title("Accumulated local effects")
 	plt.show()
 
