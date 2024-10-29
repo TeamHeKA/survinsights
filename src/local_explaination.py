@@ -7,6 +7,7 @@ import seaborn as sns
 import sklearn
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import itertools
 import shap
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
@@ -48,9 +49,13 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 		X_sel = data[:n_sel_samples].values
 		X_feat_sel = X_sel[:, sel_feat_idx]
 		# Support uniform gird of points
-		X_feat_sel_min, X_feat_sel_max = min(X_feat_sel), max(X_feat_sel)
+		if n_grid_points is None:
+			X_space = np.unique(X_feat_sel)
+			n_grid_points = len(X_space)
+		else:
+			X_feat_sel_min, X_feat_sel_max = min(X_feat_sel), max(X_feat_sel)
+			X_space = np.linspace(X_feat_sel_min, X_feat_sel_max, n_grid_points)
 		X_ext = np.repeat(X_sel, n_grid_points, axis=0)
-		X_space = np.linspace(X_feat_sel_min, X_feat_sel_max, n_grid_points)
 		X_replace = np.repeat(X_space, n_sel_samples).reshape((n_grid_points, n_sel_samples)).T.flatten()
 		X_ext[:, sel_feat_idx] = X_replace
 
@@ -100,6 +105,85 @@ def individual_conditional_expectation(explainer, selected_features, n_sel_sampl
 			encoder = explainer.encoders[selected_features]
 			feat_col_sel = encoder.get_feature_names_out([selected_features]).tolist()
 			ICE_df[selected_features] = encoder.inverse_transform(ICE_df[feat_col_sel].values).flatten()
+
+	return ICE_df
+
+
+def individual_conditional_expectation_2d(explainer, selected_features, n_sel_samples=100,
+										  n_grid_points=50, type="survival"):
+	"""
+    Compute individual conditional expectation (ICE)
+
+
+    Parameters
+    ----------
+    explainer : `class`
+		A Python class used to explain the survival model
+
+    selected_features :  `str`
+        Name of the desired features to be explained
+
+    n_sel_samples :  `int`, default = 100
+		Number of observations used for the caculation of aggregated profiles
+
+    n_grid_points :  `int`, default = 50
+		Number of grid points used for the caculation of aggregated profiles
+
+    type :  `str`, default = "survival"
+		The character of output type, either "risk", "survival" or "chf" depending
+        on the desired output
+
+
+    Returns
+    -------
+    res : `np.ndarray`, shape=(n_sel_samples, )
+        The ICE values of selected features for desired observations
+	"""
+	data = explainer.data
+	X_space = []
+	sel_feat_idxs = []
+	sel_feat_ext = []
+	for selected_feature in selected_features:
+		if selected_feature in explainer.numeric_feats:
+			sel_feat_idxs.append(data.columns.get_loc(selected_feature))
+			sel_feat_ext.append(selected_feature)
+
+		else:
+			cate_features_ext = [feat for feat in data.columns.values if selected_feature in feat]
+			sel_feat_idx = [data.columns.get_loc(feat) for feat in cate_features_ext]
+			sel_feat_idxs += sel_feat_idx
+			sel_feat_ext += cate_features_ext
+
+	X_space_ext_ = data[sel_feat_ext].drop_duplicates().values.tolist()
+	n_samples = data.shape[0]
+	n_sel_samples = min(n_sel_samples, n_samples)
+	X_replace = np.vstack([X_space_ext_] * n_sel_samples)
+	X_sel = data[:n_sel_samples].values
+	X_ext = np.repeat(X_sel, len(X_space_ext_), axis=0)
+	X_ext[:, sel_feat_idxs] = X_replace
+	data_ext = pd.DataFrame(data=X_ext, columns=data.columns.values)
+
+	if type == "survival":
+		pred = predict(explainer, data_ext)
+	elif type == "chf":
+		pred = predict(explainer, data_ext, "chf")
+	else:
+		raise ValueError("Unsupported")
+
+	ICE_df = pd.DataFrame(columns=["id", "times", "pred"] + sel_feat_ext)
+	n_grid_points_ext = len(X_space_ext_)
+	for i in range(n_sel_samples):
+		for j in range(n_grid_points_ext):
+			pred_ij = pred[pred.id == float(i * n_grid_points_ext + j)]
+			n_pred_times = pred_ij.shape[0]
+			for k in range(n_pred_times):
+				ICE_df.loc[len(ICE_df)] = [i, pred_ij.times.values[k], pred_ij.pred.values[k]] + X_space_ext_[j]
+
+	for selected_feature in selected_features:
+		if selected_feature not in explainer.numeric_feats:
+			encoder = explainer.encoders[selected_feature]
+			feat_col_sel = encoder.get_feature_names_out([selected_feature]).tolist()
+			ICE_df[selected_feature] = encoder.inverse_transform(ICE_df[feat_col_sel].values).flatten()
 
 	return ICE_df
 

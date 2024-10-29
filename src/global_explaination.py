@@ -3,9 +3,10 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from src.local_explaination import individual_conditional_expectation
+from src.local_explaination import individual_conditional_expectation, individual_conditional_expectation_2d
 from src import performance
 from src.prediction import predict
 from itertools import combinations
@@ -56,7 +57,7 @@ def plot_PDP(explainer, res, explained_feature = ""):
 	Parameters
     ----------
     res : `pd.Dataframe`
-		PDP result to be visualize
+		PDP result to be visualized
 	"""
 
 	_, ax = plt.subplots(figsize=(9, 5))
@@ -125,7 +126,6 @@ def permutation_feature_importance(explainer, feats, surv_labels, eval_times=Non
 					feats_name_ext.append(cate_feat_name_list)
 		else:
 			feats_name_org = explainer.numeric_feats
-
 		for i in range(len(feats_name_ext)):
 			feat_name = feats_name_ext[i]
 			feat_name_org = feats_name_org[i]
@@ -337,7 +337,7 @@ def plot_ALE(explainer, res, explained_feature):
 	plt.title("Accumulated local effects")
 	plt.show()
 
-def feature_interaction(explainer):
+def feature_interaction(explainer, explained_features=None, n_sel_samples=10, n_grid_points=10):
 	"""
 	Compute feature interaction
 
@@ -347,8 +347,62 @@ def feature_interaction(explainer):
 		A Python class used to explain the survival model
 	"""
 
-	raise ValueError("Not supported yet")
+	feats = explainer.numeric_feats + explainer.cate_feats
+	if explained_features == None:
+		explained_features_list = combinations(feats, 2)
+		explained_features_list = [list(i) for i in explained_features_list]
+	else:
+		explained_features_list = [[explained_features, feat] for feat in feats if feat != explained_features]
 
+	H_stat_df_list = []
+	for explained_feature in explained_features_list:
+		ICE_df = individual_conditional_expectation_2d(explainer, explained_feature, n_sel_samples, n_grid_points)
+		pdp_cols = ["times"] + explained_feature
+		PDP_df_merged = ICE_df.groupby(pdp_cols).mean().reset_index()[pdp_cols + ["pred"]]
+
+		for i in range(len(explained_feature)):
+			feature = explained_feature[i]
+			ICE_df_feat = individual_conditional_expectation(explainer, feature, n_sel_samples, n_grid_points=None)
+			pdp_cols_feat = ["times", feature]
+			PDP_df_feat = ICE_df_feat.groupby(pdp_cols_feat).mean().reset_index()[pdp_cols_feat + ["pred"]]
+			PDP_df_feat = PDP_df_feat.rename(columns={"pred": "pred_{}".format(i + 1)})
+			PDP_df_merged = PDP_df_merged.merge(PDP_df_feat, how='inner', on=['times', feature])
+
+		PDP_df_merged["var"] = (PDP_df_merged.pred.values - PDP_df_merged.pred_1.values - PDP_df_merged.pred_2.values) ** 2
+		PDP_df_merged["cor_sq"] = (PDP_df_merged.pred.values) ** 2
+		tmp_df_1 = PDP_df_merged[["times", "var"]].groupby("times").sum().reset_index()[["times", "var"]]
+		tmp_df_2 = PDP_df_merged[["times", "cor_sq"]].groupby("times").sum().reset_index()[["times", "cor_sq"]]
+		H_stat_df = tmp_df_1[["times"]]
+		H_stat_df["H_stat"] = tmp_df_1["var"].values / tmp_df_2.cor_sq.values
+		H_stat_df[["feat_1", "feat_2"]] = explained_feature
+		H_stat_df_list.append(H_stat_df)
+	H_stat_df_final = pd.concat(H_stat_df_list)
+
+	return H_stat_df_final
+
+def plot_feature_interaction(H_stat_df):
+	"""
+    Visualize the feature interaction results
+
+    Parameters
+    ----------
+    H_stat_df : `pd.Dataframe`
+        H statistics result to be visualize
+    """
+	pair_list = H_stat_df[["feat_1", "feat_2"]].drop_duplicates().values
+
+	_, ax = plt.subplots(figsize=(9, 5))
+	[x.set_linewidth(2) for x in ax.spines.values()]
+	[x.set_edgecolor('black') for x in ax.spines.values()]
+	for pair in pair_list:
+		H_stat_df_pair = H_stat_df[(H_stat_df[["feat_1", "feat_2"]].values == pair).all(axis=1)]
+		sns.lineplot(data=H_stat_df_pair, x="times", y="H_stat", label=pair[0] + "+" + pair[1])
+
+	plt.xlabel("Time")
+	plt.ylabel("")
+	plt.legend(prop = {"size": 12})
+	plt.title("Feature interaction")
+	plt.show()
 
 def functional_decomposition(explainer):
 	"""
