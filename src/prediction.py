@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
 
-def predict(explainer, data, times=None, type="survival"):
+def predict(explainer, data, times=None, prediction_type="survival"):
 	"""
 	Calculate model prediction in a unified way
 
@@ -21,7 +21,7 @@ def predict(explainer, data, times=None, type="survival"):
     times :  `np.ndarray`, shape=(n_times,), default = None
 		An array of times for the desired prediction to be evaluated at
 
-    type : `str`, default = "survival"
+    prediction_type : `str`, default = "survival"
         The character of output type, either "risk", "survival" or "chf" depending
         on the desired output
 
@@ -45,9 +45,9 @@ def predict(explainer, data, times=None, type="survival"):
 	else:
 		feats = data
 
-	if type == "survival":
+	if prediction_type == "survival":
 		preds = explainer.sf(feats)
-	elif type == "chf":
+	elif prediction_type == "chf":
 		preds = explainer.chf(feats)
 	else:
 		raise ValueError("Unsupported type")
@@ -88,7 +88,7 @@ def predict(explainer, data, times=None, type="survival"):
 		return pred
 
 
-def plot_prediction(pred, type):
+def plot_prediction(pred, prediction_type):
 	"""
 	Plot the prediction of survival model
 
@@ -111,12 +111,12 @@ def plot_prediction(pred, type):
 	ax.get_legend().remove()
 	ax.set_xlim(min(pred.times.values), max(pred.times.values))
 	plt.xlabel("Times", fontsize=20)
-	if type == "survival":
+	if prediction_type == "survival":
 		ax.set_ylim(0, 1)
 		plt.ylabel("Survival function", fontsize=20)
-	elif type == "chf":
+	elif prediction_type == "chf":
 		plt.ylabel("Cumulative hazard function", fontsize=20)
-	elif type == "risk":
+	elif prediction_type == "risk":
 		plt.ylabel("Hazard function", fontsize=20)
 	else:
 		raise ValueError("Only support output type survival, chf, risk")

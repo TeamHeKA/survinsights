@@ -33,8 +33,8 @@ def convert_surv_label_structarray(surv_label):
     return surv_label_structarray
 
 
-def feat_order(explainer, selected_features):
-    data = explainer.data.copy(deep=True)
+def order_feature_value(explainer, selected_features):
+    data = explainer.features_df.copy(deep=True)
     encoder = explainer.encoders[selected_features]
     cate_features_ext = [feat for feat in data.columns.values if selected_features in feat]
     feat_values = encoder.inverse_transform(data[cate_features_ext]).flatten()
@@ -43,9 +43,9 @@ def feat_order(explainer, selected_features):
     group_comb = combinations(group_values, 2)
     n_groups = len(np.unique(group_values))
     dist_mat = np.zeros((n_groups, n_groups))
-    for pair_feat in explainer.numeric_feats + explainer.cate_feats:
+    for pair_feat in explainer.numeric_feat_names + explainer.cate_feat_names:
         if pair_feat not in selected_features:
-            if pair_feat in explainer.numeric_feats:
+            if pair_feat in explainer.numeric_feat_names:
                 for pair in group_comb:
                     samp1 = data[data[selected_features] == pair[0]][pair_feat].values
                     samp2 = data[data[selected_features] == pair[1]][pair_feat].values

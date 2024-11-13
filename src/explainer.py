@@ -1,4 +1,6 @@
 import numpy as np
+from PIL.features import features
+
 
 class explainer():
 	"""
@@ -25,16 +27,16 @@ class explainer():
         Method to predict cumulative hazard function
 	"""
 
-	def __init__(self, model, data, label, times = None,
+	def __init__(self, model, features_df, survival_labels, times = None,
 	             time_generation="quantile", survival_fucntion  = None,
 	             cummulative_hazard_function = None, encoders=None):
 
 		self.model = model
 		# TODO: Check the availability of data, label
-		self.data = data
-		self.label = label
+		self.features_df = features_df
+		self.survival_labels = survival_labels
 
-		self.X = self.data.values
+		self.features_value = self.features_df.values
 
 		if survival_fucntion is not None:
 			self.sf = survival_fucntion
@@ -55,14 +57,13 @@ class explainer():
 			raise ValueError("Unsupported model")
 
 		if times is None:
-			surv_times, surv_indx = label[:, 0], label[:, 1]
+			surv_times, surv_indx = survival_labels[:, 0], survival_labels[:, 1]
 
 			if time_generation == "quantile":
 				qt_list = np.arange(0.05, 0.95, 0.05)
 				self.times = np.quantile(surv_times[surv_indx==1], qt_list)
 
 			elif time_generation == "uniform":
-				#self.times = np.linspace(min(survival_times), max(survival_times), 50)
 				self.times = np.linspace(np.quantile(surv_times[surv_indx==1], 0.1),
 				                         np.quantile(surv_times[surv_indx==1], 0.9), 50)
 
@@ -73,12 +74,12 @@ class explainer():
 
 		self.encoders = encoders
 		if encoders is not None:
-			self.cate_feats = list(encoders.keys())
-			numeric_feats = []
-			for feat in data.columns.values:
-				if not np.array([cate_feat in feat for cate_feat in self.cate_feats]).any():
-					numeric_feats.append(feat)
-			self.numeric_feats = numeric_feats
+			self.cate_feat_names = list(encoders.keys())
+			numeric_feat_names = []
+			for feat_name in features_df.columns.values:
+				if not np.array([cate_feat in feat_name for cate_feat in self.cate_feat_names]).any():
+					numeric_feat_names.append(feat_name)
+			self.numeric_feat_names = numeric_feat_names
 		else:
-			self.cate_feats = None
-			self.numeric_feats = list(data.columns.values)
+			self.cate_feat_names = None
+			self.numeric_feat_names = list(features_df.columns.values)

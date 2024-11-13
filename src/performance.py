@@ -104,19 +104,19 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 		if len(ylim) != 2:
 			raise ValueError("ylim should be tuple of size 2")
 		else:
-			ylim_left, ylim_right = ylim
+			ylim_lower, ylim_upper = ylim
 	else:
 		if metric == "c_index":
-			ylim_left, ylim_right = 0, 1
+			ylim_lower, ylim_upper = 0, 1
 		elif metric == "brier_score":
-			ylim_left, ylim_right = 0, .5
+			ylim_lower, ylim_upper = 0, .5
 		elif metric == "auc":
-			ylim_left, ylim_right = 0, 1
+			ylim_lower, ylim_upper = 0, 1
 		else:
 			raise ValueError("Only support output type c_index, brier_score, auc")
 
 	ax.set_xlim(xlim_left, xlim_right)
-	ax.set_ylim(ylim_left, ylim_right)
+	ax.set_ylim(ylim_lower, ylim_upper)
 
 	if metric == "c_index":
 		plt.ylabel("C-Index", fontsize=20)
@@ -128,17 +128,3 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 		raise ValueError("Only support output type c_index, brier_score, auc")
 
 	plt.show()
-
-def Brier_Score():
-
-	return None
-
-
-def C_index():
-
-	return None
-
-
-def AUC():
-
-	return None
