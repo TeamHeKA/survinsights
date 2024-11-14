@@ -1,11 +1,8 @@
 import numpy as np
-
-from scipy.interpolate import interp1d
 from itertools import combinations
 from scipy.stats import kstest
 import pandas as pd
 from sklearn.manifold import MDS
-
 
 def convert_surv_label_structarray(surv_label):
     """
@@ -36,67 +33,8 @@ def convert_surv_label_structarray(surv_label):
     return surv_label_structarray
 
 
-
-
-def predict_survival_function_pycox(model, newdata):
-    
-    results=[]
-        
-    if len(newdata.shape)==1:
-        surv=model.predict_surv_df(np.array([newdata]))
-        t=np.array([surv.index])
-        surv_prob=np.array([surv])
-                 
-        surv_func = interp1d(np.insert(t,0,0), np.insert(surv_prob,0,1), kind='previous', fill_value="extrapolate")
-            
-        results.append(surv_func)
-                 
-        return results
-             
-    elif len(newdata.shape)==2 and newdata.shape[0]==1:
-        surv=model.predict_surv_df(newdata)
-        t=np.array([surv.index])
-        surv_prob=np.array([surv])
-                 
-        surv_func = interp1d(np.insert(t,0,0), np.insert(surv_prob,0,1), kind='previous', fill_value="extrapolate")
-            
-        results.append(surv_func)
-                 
-        return results
-             
-    else:
-                 
-        surv=model.predict_surv_df(newdata)
-        t=np.array([surv.index])
-                 
-        surv_prob=np.array(surv)
-                 
-                 
-        for i in range(0,surv_prob.shape[1],1):
-            surv_prob_ind=surv_prob[:,i]
-            surv_func = interp1d(np.insert(t,0,0), np.insert(surv_prob_ind,0,1), kind='previous', fill_value="extrapolate")
-                     
-            results.append(surv_func)
-                 
-        return results
-
-
-def predict_cumulative_hazard_function_pycox(model, newdata):
-    results=[]
-    if len(newdata.shape)==1:
-        results.append(-np.log(predict_survival_function_pycox(model,newdata)))
-    elif len(newdata.shape)==2 and newdata.shape[0]==1:
-        results.append(-np.log(predict_survival_function_pycox(model,newdata)))
-    else:
-        for i in range(newdata.shape[0]):
-            results.append(-np.log(predict_survival_function_pycox(model,newdata[i,:])))
-    
-    return results
-
-
-
-def feat_order(explainer, selected_features):
-    data = explainer.data.copy(deep=True)
+def order_feature_value(explainer, selected_features):
+    data = explainer.features_df.copy(deep=True)
     encoder = explainer.encoders[selected_features]
     cate_features_ext = [feat for feat in data.columns.values if selected_features in feat]
     feat_values = encoder.inverse_transform(data[cate_features_ext]).flatten()
@@ -105,9 +43,9 @@ def feat_order(explainer, selected_features):
     group_comb = combinations(group_values, 2)
     n_groups = len(np.unique(group_values))
     dist_mat = np.zeros((n_groups, n_groups))
-    for pair_feat in explainer.numeric_feats + explainer.cate_feats:
+    for pair_feat in explainer.numeric_feat_names + explainer.cate_feat_names:
         if pair_feat not in selected_features:
-            if pair_feat in explainer.numeric_feats:
+            if pair_feat in explainer.numeric_feat_names:
                 for pair in group_comb:
                     samp1 = data[data[selected_features] == pair[0]][pair_feat].values
                     samp2 = data[data[selected_features] == pair[1]][pair_feat].values
