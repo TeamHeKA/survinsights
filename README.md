@@ -42,4 +42,4 @@ python -m ipykernel install --user --name=".venv_surv_interpret"
 
 ## Notebook tutorial
 
-The Jupyter notebook "tutorials" gives useful example of how to use the framework
+The Jupyter notebooks in folder "examples" give useful tutorials of how to use the framework
