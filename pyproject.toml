@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "src"
+version = "0.0.1"
+description = "Interpretation of ML-based survival methods"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "COPYING" }
+authors = [
+  { authors = "Lucas Ducrot", email = "lucas.ducrot@inria.fr"},
+  { authors = "Van Tuan Nguyen", email = "van-tuan.nguyen@inria.fr"},
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "pillow",
+  "seaborn",
+  "scikit-learn",
+  "scikit-survival",
+  "scipy",
+  "shap",
+]
+
+[project.urls]
+Documentation = "https://github.com/TeamHeKA/survInterpretability#README"
+Issues = "https://github.com/TeamHeKA/survInterpretability/issues"
+Source = "https://github.com/TeamHeKA/survInterpretability"
+
+[tool.hatch.build.targets.sdist]
+include = [ "/src" ]
