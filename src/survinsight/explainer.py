@@ -1,6 +1,4 @@
 import numpy as np
-from PIL.features import features
-
 
 class explainer():
 	"""

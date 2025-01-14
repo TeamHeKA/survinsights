@@ -6,7 +6,7 @@ import matplotlib as mpl
 
 sns.set(style='whitegrid', font="STIXGeneral", context='talk', palette='colorblind')
 
-from src.prediction import predict
+from survinsight.prediction import predict
 
 
 def individual_conditional_expectation(explainer, explained_feature_name, num_samples=100, num_grid_points=50,
@@ -203,7 +203,7 @@ def construct_ice_result_dataframe(predictions, explained_feature_space, num_sam
 	return ice_df
 
 
-def plot_ice(explainer, ice_results_df, sample_id=0, ylim=None):
+def plot_ice(explainer, ice_results_df, sample_id=0, xvar="Time", ylim=None):
 	"""
 	Visualize the ICE results.
 
@@ -215,6 +215,10 @@ def plot_ice(explainer, ice_results_df, sample_id=0, ylim=None):
 		DataFrame containing ICE results to visualize.
 	sample_id : int, optional
 		ID of the observation to plot. Default is 0.
+	xvar : str, optional
+		Name of the x-axis variable. Default is "Time".
+	ylim : tuple, optional
+		Lower and upper limits for the y-axis. Default is None.
 	"""
 	_, ax = plt.subplots(figsize=(9, 5))
 	for spine in ax.spines.values():
@@ -222,26 +226,41 @@ def plot_ice(explainer, ice_results_df, sample_id=0, ylim=None):
 		spine.set_edgecolor('black')
 
 	explained_feature_name = [col for col in ice_results_df.columns.values if col not in ["id", "times", "pred"]][0]
-	if explained_feature_name in explainer.numeric_feat_names:
-		unique_values = np.unique(ice_results_df[explained_feature_name].values)
-		normalized_values = (unique_values - min(unique_values)) / (max(unique_values) - min(unique_values))
-		cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(unique_values)), cmap='BrBG')
+	if xvar == "Time":
+		if explained_feature_name in explainer.numeric_feat_names:
+			unique_values = np.unique(ice_results_df[explained_feature_name].values)
+			normalized_values = (unique_values - min(unique_values)) / (max(unique_values) - min(unique_values))
+			cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(unique_values)), cmap='BrBG')
 
-		for i, value in enumerate(unique_values):
-			subset = ice_results_df[(ice_results_df.id == sample_id) & (ice_results_df[explained_feature_name] == value)]
-			sns.lineplot(data=subset, x="times", y="pred", color=cmap.get_cmap()(normalized_values[i]), ax=ax)
+			for i, value in enumerate(unique_values):
+				subset = ice_results_df[(ice_results_df.id == sample_id) & (ice_results_df[explained_feature_name] == value)]
+				sns.lineplot(data=subset, x="times", y="pred", color=cmap.get_cmap()(normalized_values[i]), ax=ax)
 
-		plt.colorbar(cmap, ax=ax, orientation='vertical', label=explained_feature_name)
+			plt.colorbar(cmap, ax=ax, orientation='vertical', label=explained_feature_name)
+		else:
+			subset = ice_results_df[ice_results_df.id == sample_id].sort_values(by=explained_feature_name)
+			sns.lineplot(data=subset, x="times", y="pred", hue=explained_feature_name, ax=ax)
 	else:
-		subset = ice_results_df[ice_results_df.id == sample_id].sort_values(by=explained_feature_name)
-		sns.lineplot(data=subset, x="times", y="pred", hue=explained_feature_name, ax=ax)
+		unique_times = np.unique(ice_results_df["times"].values)
+		normalized_times = (unique_times - min(unique_times)) / (max(unique_times) - min(unique_times))
+		cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(unique_times)), cmap='BrBG')
+
+		for i, time in enumerate(unique_times):
+			subset = ice_results_df[(ice_results_df.id == sample_id) & (ice_results_df["times"] == time)]
+			sns.lineplot(data=subset, x=explained_feature_name, y="pred", color=cmap.get_cmap()(normalized_times[i]), ax=ax)
+
+		plt.colorbar(cmap, ax=ax, orientation='vertical', label="Times")
 
 	if ylim is not None:
 		ylim_lower, ylim_upper = ylim
 	else:
 		ylim_lower, ylim_upper = 0, 1
 	ax.set_ylim(ylim_lower, ylim_upper)
-	plt.xlabel("Time")
+	if xvar == "Time":
+		plt.xlabel("Time")
+	else:
+		plt.xlabel(explained_feature_name)
+	# plt.xlabel("Time")
 	plt.ylabel("Survival prediction")
 	plt.title(f"ICE for feature {explained_feature_name} of observation id = {sample_id}")
 	plt.savefig(f"ICE_feature_{explained_feature_name}_of_id={sample_id}.pdf", bbox_inches='tight')

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from src.local_explaination import individual_conditional_expectation
+from survinsight.local_explaination import individual_conditional_expectation
 
 def partial_dependence_plots(explainer, explained_feature_name,
                              num_samples = 100, num_grid_points = 50, prediction_type = "survival"):
@@ -34,6 +34,7 @@ def partial_dependence_plots(explainer, explained_feature_name,
 	ICE_df = individual_conditional_expectation(explainer, expl_f_name, num_samples, num_grid_points, prediction_type)
 
 	PDP_df = ICE_df.groupby([expl_f_name, 'times']).mean().reset_index()[[expl_f_name, "times", "pred"]]
+	PDP_df["prediction_type"] = prediction_type
 
 	return PDP_df
 
@@ -75,7 +76,15 @@ def plot_pdp(explainer, pdp_results_df, ylim=None):
 		ylim_lower, ylim_upper = 0, 1
 	ax.set_ylim(ylim_lower, ylim_upper)
 	plt.xlabel("Time")
-	plt.ylabel("Survival prediction")
-	plt.title(f"PDP for feature {explained_feature_name}")
-	plt.savefig(f"PDP_feature_{explained_feature_name}.pdf", bbox_inches='tight')
+	if "survival" in pdp_results_df.prediction_type.values:
+		plt.ylabel("Survival function")
+	elif "chf" in pdp_results_df.prediction_type.values:
+		plt.ylabel("Cumulative hazard function")
+	else:
+		plt.ylabel("Hazard function")
+	model_name = explainer.model.__class__.__name__
+	if model_name == "RandomSurvivalForest":
+		model_name = "RSF"
+	plt.title(f"Partial Dependence Plot for the {model_name} model")
+	plt.savefig(f"PDP_model_{model_name}_feature_{explained_feature_name}.pdf", bbox_inches='tight')
 	plt.show()

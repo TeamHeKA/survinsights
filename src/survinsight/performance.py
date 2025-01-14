@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 from sksurv.metrics import concordance_index_censored, brier_score, cumulative_dynamic_auc
-from src.prediction import predict
-from src.utils import convert_surv_label_structarray
 import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
+
+from survinsight.prediction import predict
+from survinsight.utils import convert_surv_label_structarray
 
 def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	"""

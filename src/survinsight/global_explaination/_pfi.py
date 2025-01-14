@@ -1,12 +1,10 @@
-from pyexpat import features
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from src import performance
+from survinsight import performance
 
 
 def permutation_feature_importance(explainer, eval_times=None, num_perm=10,

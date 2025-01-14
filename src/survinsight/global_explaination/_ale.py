@@ -4,8 +4,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
-from src.prediction import predict
-from src.utils import order_feature_value
+
+from survinsight.prediction import predict
+from survinsight.utils import order_feature_value
 
 def accumulated_local_effects_plots(explainer, explained_feature_name, prediction_type = "survival"):
 	"""
