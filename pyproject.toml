@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "survinsight"
+name = "survinsights"
 version = "0.0.1"
 description = "Interpretation of ML-based survival methods"
 readme = "README.md"

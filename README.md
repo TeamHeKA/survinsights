@@ -1,8 +1,8 @@
-# survinsight
-_survinsight_ is a framework for interpreting survival models
+# survInsights
+_survinsights_ is a framework for interpreting survival models
 
 ## Quick description
-_survinsight_ is a Python 3 package 
+_survinsights_ is a Python 3 package 
 
 
 ## Notebook tutorial
