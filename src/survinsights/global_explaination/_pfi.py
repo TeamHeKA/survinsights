@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from survinsight import performance
+from survinsights import performance
 
 
 def permutation_feature_importance(explainer, eval_times=None, num_perm=10,

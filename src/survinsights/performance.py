@@ -5,8 +5,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from survinsight.prediction import predict
-from survinsight.utils import convert_surv_label_structarray
+from survinsights.prediction import predict
+from survinsights.utils import convert_surv_label_structarray
 
 def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	"""

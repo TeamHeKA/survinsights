@@ -6,7 +6,7 @@ import matplotlib as mpl
 
 sns.set(style='whitegrid', font="STIXGeneral", context='talk', palette='colorblind')
 
-from survinsight.prediction import predict
+from survinsights.prediction import predict
 
 
 def individual_conditional_expectation(explainer, explained_feature_name, num_samples=100, num_grid_points=50,

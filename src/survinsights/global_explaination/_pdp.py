@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from survinsight.local_explaination import individual_conditional_expectation
+from survinsights.local_explaination import individual_conditional_expectation
 
 def partial_dependence_plots(explainer, explained_feature_name,
                              num_samples = 100, num_grid_points = 50, prediction_type = "survival"):

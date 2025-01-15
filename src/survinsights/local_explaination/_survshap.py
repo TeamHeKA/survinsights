@@ -3,7 +3,7 @@ import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 import matplotlib.pyplot as plt
 import shap
-from survinsight.prediction import predict
+from survinsights.prediction import predict
 
 
 def survshap(explainer, new_data, sample_id=0):
