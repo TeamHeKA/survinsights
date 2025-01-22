@@ -43,9 +43,8 @@ def survshap(explainer, new_data, sample_id=0):
 		preprocessed_feats_df = preprocessed_feats_df[explainer.features_df.columns.tolist()]
 
 		predictions_df = predict(explainer, preprocessed_feats_df, prediction_type="survival")
-		predictions = predictions_df.pred.values.reshape((feats_df.shape[0], -1))
+		return predictions_df.pred.values.reshape((feats_df.shape[0], -1))
 
-		return predictions
 
 	if sample_id is None:
 		sample_id = 0

@@ -44,9 +44,8 @@ def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
 	initial_coefs = np.zeros(features_df.shape[1])
 	optimized_coefs = minimize(survlime_objective, initial_coefs, args=args, method='BFGS', options={'gtol': 1e-8}).x
 
-	survlime_df = format_survlime_results(features_df.columns, optimized_coefs, explained_sample_df)
+	return format_survlime_results(features_df.columns, optimized_coefs, explained_sample_df)
 
-	return survlime_df
 
 def generate_neighbors(explainer, explained_sample_df, num_neighbors):
 	"""

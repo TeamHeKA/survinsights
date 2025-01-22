@@ -62,16 +62,14 @@ def compute_numeric_ale(explainer, expl_feat_name, prediction_type):
 	survival_times = explainer.survival_labels[:, 0]
 	survival_indicators = explainer.survival_labels[:, 1].astype(bool)
 	unique_times = np.unique(survival_times)
-	if unique_times[-1] >= max(survival_times[survival_indicators]):
-		eval_times = unique_times[:-1]
-	else:
-		eval_times = unique_times
+	eval_times = unique_times[:-1] if unique_times[-1] >= max(survival_times[survival_indicators]) else unique_times
 
 	if prediction_type in ["survival", "chf"]:
 		lower_pred = predict(explainer, ale_feats_df_lower, eval_times, prediction_type)
 		upper_pred = predict(explainer, ale_feats_df_upper, eval_times, prediction_type)
 	else:
-		raise ValueError("Unsupported")
+		msg = "Unsupported"
+		raise ValueError(msg)
 
 	ale_diff_df = calculate_ale_diff(lower_pred, upper_pred, value_group, eval_times)
 
@@ -103,10 +101,7 @@ def compute_categorical_ale(explainer, expl_feat_name, prediction_type):
 	survival_times = explainer.survival_labels[:, 0]
 	survival_indicators = explainer.survival_labels[:, 1].astype(bool)
 	unique_times = np.unique(survival_times)
-	if unique_times[-1] >= max(survival_times[survival_indicators]):
-		eval_times = unique_times[:-1]
-	else:
-		eval_times = unique_times
+	eval_times = unique_times[:-1] if unique_times[-1] >= max(survival_times[survival_indicators]) else unique_times
 
 	if prediction_type in ["survival", "chf"]:
 		inc_group_sel = [group > 0 for group in value_group]
@@ -130,7 +125,8 @@ def compute_categorical_ale(explainer, expl_feat_name, prediction_type):
 		dec_pred["groups"] = dec_groups_ext
 		ale_diff_df = pd.concat([inc_pred, dec_pred], ignore_index=True)
 	else:
-		raise ValueError("Unsupported output type")
+		msg = "Unsupported output type"
+		raise ValueError(msg)
 
 
 	return finalize_ale(ale_diff_df, expl_feat_name, explainer, sorted_feat_val, eval_times)

@@ -32,9 +32,8 @@ def feature_interaction(explainer, explained_feature_name=None, num_samples=10, 
 	feature_pairs = get_feature_name_pairs(all_feat_names, explained_feature_name)
 
 	h_stat_dfs = [calculate_interaction_statistic(explainer, pair, num_samples, num_grid_points) for pair in feature_pairs]
-	h_stat_df = pd.concat(h_stat_dfs, ignore_index=True)
+	return pd.concat(h_stat_dfs, ignore_index=True)
 
-	return h_stat_df
 
 
 def get_feature_name_pairs(all_feat_names, expl_feat_name):
@@ -88,9 +87,8 @@ def calculate_interaction_statistic(explainer, fname_pair, num_samples, num_grid
 		pdp_single = pdp_single.rename(columns={"pred": f"pred_{idx + 1}"})
 		pdp_merged = pdp_merged.merge(pdp_single, on=["times", fname], how="inner")
 
-	h_stat_df = compute_h_statistic(pdp_merged, fname_pair)
+	return compute_h_statistic(pdp_merged, fname_pair)
 
-	return h_stat_df
 
 
 def compute_partial_dependence(ice_2d, fname_pair):
@@ -109,10 +107,9 @@ def compute_partial_dependence(ice_2d, fname_pair):
 	pd.DataFrame
 		DataFrame with mean predictions for each feature combination over time.
 	"""
-	pdp_columns = ["times"] + fname_pair
-	pdp = ice_2d.groupby(pdp_columns).mean().reset_index()[pdp_columns + ["pred"]]
+	pdp_columns = ['times', *fname_pair]
+	return ice_2d.groupby(pdp_columns).mean().reset_index()[[*pdp_columns, 'pred']]
 
-	return pdp
 
 
 def compute_h_statistic(pdp_df, fname_pair):

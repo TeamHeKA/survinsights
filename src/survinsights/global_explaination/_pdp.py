@@ -57,7 +57,7 @@ def plot_pdp(explainer, pdp_results_df, ylim=None):
 		spine.set_linewidth(2)
 		spine.set_edgecolor('black')
 
-	explained_feature_name = [col for col in pdp_results_df.columns.values if col not in ["id", "times", "pred"]][0]
+	explained_feature_name = next(col for col in pdp_results_df.columns.values if col not in ["id", "times", "pred"])
 	if explained_feature_name in explainer.numeric_feat_names:
 		unique_values = np.unique(pdp_results_df[explained_feature_name].values)
 		normalized_values = (unique_values - min(unique_values)) / (max(unique_values) - min(unique_values))

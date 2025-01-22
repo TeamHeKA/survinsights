@@ -28,11 +28,10 @@ def convert_surv_label_structarray(surv_label):
     for i in range(n_samples):
         surv_label_structarray.append((bool(surv_label[i, 1]), surv_label[i, 0]))
 
-    surv_label_structarray = np.rec.array(surv_label_structarray,
+    return np.rec.array(surv_label_structarray,
                                           dtype=[('indicator', bool),
                                                  ('time', np.float32)])
 
-    return surv_label_structarray
 
 
 def order_feature_value(explainer, selected_features):
@@ -79,6 +78,5 @@ def order_feature_value(explainer, selected_features):
     dist_df = pd.DataFrame(np.array([np.array(group_values), dist_reduced]).T, columns=["groups", "dist"])
     dist_df = dist_df.sort_values(by=['dist'])
     encoder = explainer.encoders[selected_features]
-    ordered_groups = encoder.transform(dist_df.groups.values.reshape((-1, 1))).toarray()
+    return encoder.transform(dist_df.groups.values.reshape((-1, 1))).toarray()
 
-    return ordered_groups

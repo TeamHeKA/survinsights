@@ -192,7 +192,7 @@ def construct_ice_result_dataframe(predictions, explained_feature_space, num_sam
 	pd.DataFrame
 		DataFrame containing ICE values for the selected feature(s).
 	"""
-	ice_df = pd.DataFrame(columns=["id", "times", "pred"] + explained_feature_name_ext)
+	ice_df = pd.DataFrame(columns=['id', 'times', 'pred', *explained_feature_name_ext])
 	for i in range(num_samples):
 		for j, value in enumerate(explained_feature_space):
 			prediction_subset = predictions[predictions.id == float(i * len(explained_feature_space) + j)]
@@ -225,7 +225,7 @@ def plot_ice(explainer, ice_results_df, sample_id=0, xvar="Time", ylim=None):
 		spine.set_linewidth(2)
 		spine.set_edgecolor('black')
 
-	explained_feature_name = [col for col in ice_results_df.columns.values if col not in ["id", "times", "pred"]][0]
+	explained_feature_name = next(col for col in ice_results_df.columns.values if col not in ["id", "times", "pred"])
 	if xvar == "Time":
 		if explained_feature_name in explainer.numeric_feat_names:
 			unique_values = np.unique(ice_results_df[explained_feature_name].values)

@@ -44,7 +44,8 @@ class explainer:
 		elif "pycox" in model.__module__:
 			self.sf = model.predict_surv_df
 		else:
-			raise ValueError("Unsupported model")
+			msg = "Unsupported model"
+			raise ValueError(msg)
 
 		if cummulative_hazard_function is not None:
 			self.chf = cummulative_hazard_function
@@ -53,7 +54,8 @@ class explainer:
 		elif "pycox" in model.__module__:
 			self.chf = model.predict_cumulative_hazards
 		else:
-			raise ValueError("Unsupported model")
+			msg = "Unsupported model"
+			raise ValueError(msg)
 
 		if times is None:
 			surv_times, surv_indx = survival_labels[:, 0], survival_labels[:, 1]

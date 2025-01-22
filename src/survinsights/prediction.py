@@ -35,23 +35,18 @@ def predict(explainer, data, times=None, prediction_type="survival"):
 
 	n_samples = data.shape[0]
 
-	if times is None:
-		times = explainer.times
-	else:
-		times = np.unique(times)
+	times = explainer.times if times is None else np.unique(times)
 	n_times = len(times)
 
-	if isinstance(data, pd.DataFrame):
-		feats = data.copy(deep=True).values
-	else:
-		feats = data
+	feats = data.copy(deep=True).values if isinstance(data, pd.DataFrame) else data
 
 	if prediction_type == "survival":
 		preds = explainer.sf(feats)
 	elif prediction_type == "chf":
 		preds = explainer.chf(feats)
 	else:
-		raise ValueError("Unsupported type")
+		msg = "Unsupported type"
+		raise ValueError(msg)
 
 	if isinstance(data, pd.DataFrame):
 		pred_df = pd.DataFrame(columns=["id", "times", "pred"])
@@ -67,7 +62,8 @@ def predict(explainer, data, times=None, prediction_type="survival"):
 					pred_ij = surv_pred_i[idx_time_ij]
 					pred_df.loc[len(pred_df)] = [i, time_j, pred_ij]
 				else:
-					raise ValueError("Unsupported model")
+					msg = "Unsupported model"
+					raise ValueError(msg)
 
 		return pred_df
 
@@ -84,7 +80,8 @@ def predict(explainer, data, times=None, prediction_type="survival"):
 					idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
 					pred[i, j] = surv_pred_i[idx_time_ij]
 				else:
-					raise ValueError("Unsupported model")
+					msg = "Unsupported model"
+					raise ValueError(msg)
 
 		return pred
 
@@ -120,6 +117,7 @@ def plot_prediction(pred, prediction_type):
 	elif prediction_type == "risk":
 		plt.ylabel("Hazard function", fontsize=20)
 	else:
-		raise ValueError("Only support output type survival, chf, risk")
+		msg = "Only support output type survival, chf, risk"
+		raise ValueError(msg)
 
 	plt.show()

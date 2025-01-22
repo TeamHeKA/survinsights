@@ -36,15 +36,9 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	res : `np.ndarray`, shape=(n_times, )
 		The matrix contains the evaluation of the desired metric
 	"""
-	if times is None:
-		times = explainer.times
-	else:
-		times = np.unique(times)
+	times = explainer.times if times is None else np.unique(times)
 	n_times = len(times)
-	if isinstance(data, pd.DataFrame):
-		feats = data.values
-	else:
-		feats = data
+	feats = data.values if isinstance(data, pd.DataFrame) else data
 	surv_pred = predict(explainer, feats, times)
 	survival_time =label[:, 0]
 	survival_indicator = label[:, 1].astype(bool)
@@ -62,9 +56,8 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
 		for j in range(n_times):
 			res[j] = cumulative_dynamic_auc(label_st, label_st, -surv_pred[:, j], times[j])[0]
 
-	res = pd.DataFrame(data=np.stack([times, res]).T, columns=["times", "perf"])
+	return pd.DataFrame(data=np.stack([times, res]).T, columns=["times", "perf"])
 
-	return res
 
 def plot_performance(perf, metric, xlim=None, ylim=None):
 	"""
@@ -97,7 +90,8 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 
 	if xlim is not None:
 		if len(xlim) != 2:
-			raise ValueError("xlim should be tuple of size 2")
+			msg = "xlim should be tuple of size 2"
+			raise ValueError(msg)
 		else:
 			xlim_left, xlim_right = xlim
 	else:
@@ -105,7 +99,8 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 
 	if ylim is not None:
 		if len(ylim) != 2:
-			raise ValueError("ylim should be tuple of size 2")
+			msg = "ylim should be tuple of size 2"
+			raise ValueError(msg)
 		else:
 			ylim_lower, ylim_upper = ylim
 	elif metric == "c_index":
@@ -115,7 +110,8 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 	elif metric == "auc":
 		ylim_lower, ylim_upper = 0, 1
 	else:
-		raise ValueError("Only support output type c_index, brier_score, auc")
+		msg = "Only support output type c_index, brier_score, auc"
+		raise ValueError(msg)
 
 	ax.set_xlim(xlim_left, xlim_right)
 	ax.set_ylim(ylim_lower, ylim_upper)
@@ -127,6 +123,7 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 	elif metric == "auc":
 		plt.ylabel("AUC", fontsize=20)
 	else:
-		raise ValueError("Only support output type c_index, brier_score, auc")
+		msg = "Only support output type c_index, brier_score, auc"
+		raise ValueError(msg)
 
 	plt.show()
