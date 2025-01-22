@@ -1,11 +1,11 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-import matplotlib.pyplot as plt
 import shap
 
 from survinsights.prediction import predict
+
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
 
 def survshap(explainer, new_data, sample_id=0):
@@ -41,13 +41,9 @@ def survshap(explainer, new_data, sample_id=0):
             else:
                 preprocessed_feats_df[f_name] = feats_df[:, idx].flatten()
         # sort the dataframe based on the order of encoded feature name in trained model
-        preprocessed_feats_df = preprocessed_feats_df[
-            explainer.features_df.columns.tolist()
-        ]
+        preprocessed_feats_df = preprocessed_feats_df[explainer.features_df.columns.tolist()]
 
-        predictions_df = predict(
-            explainer, preprocessed_feats_df, prediction_type="survival"
-        )
+        predictions_df = predict(explainer, preprocessed_feats_df, prediction_type="survival")
         return predictions_df.pred.values.reshape((feats_df.shape[0], -1))
 
     if sample_id is None:
@@ -55,12 +51,8 @@ def survshap(explainer, new_data, sample_id=0):
 
     sel_sample_df = new_data.iloc[[sample_id]]
 
-    decoded_features_df = pd.DataFrame(
-        columns=explainer.cate_feat_names + explainer.numeric_feat_names
-    )
-    decoded_sel_sample_df = pd.DataFrame(
-        columns=explainer.cate_feat_names + explainer.numeric_feat_names
-    )
+    decoded_features_df = pd.DataFrame(columns=explainer.cate_feat_names + explainer.numeric_feat_names)
+    decoded_sel_sample_df = pd.DataFrame(columns=explainer.cate_feat_names + explainer.numeric_feat_names)
     decoded_feat_names = explainer.cate_feat_names + explainer.numeric_feat_names
 
     for feat_name in explainer.cate_feat_names + explainer.numeric_feat_names:
@@ -70,9 +62,7 @@ def survshap(explainer, new_data, sample_id=0):
             decoded_features_df[feat_name] = encoder.inverse_transform(
                 explainer.features_df[encoded_feat_name]
             ).flatten()
-            decoded_sel_sample_df[feat_name] = encoder.inverse_transform(
-                sel_sample_df[encoded_feat_name]
-            ).flatten()
+            decoded_sel_sample_df[feat_name] = encoder.inverse_transform(sel_sample_df[encoded_feat_name]).flatten()
         else:
             decoded_features_df[feat_name] = explainer.features_df[feat_name]
             decoded_sel_sample_df[feat_name] = decoded_sel_sample_df[feat_name]
@@ -80,9 +70,7 @@ def survshap(explainer, new_data, sample_id=0):
     # Support KernelSHAP
     shap_explainer = shap.KernelExplainer(preprocess_for_shap, decoded_features_df)
     shap_values = shap_explainer(decoded_sel_sample_df)
-    survshap_result_df = pd.DataFrame(
-        data=shap_values[0].values.T, columns=decoded_feat_names
-    )
+    survshap_result_df = pd.DataFrame(data=shap_values[0].values.T, columns=decoded_feat_names)
     survshap_result_df["times"] = explainer.times
 
     return survshap_result_df
@@ -105,9 +93,7 @@ def plot_survshap(survshap_result_df, sample_id=0):
         spine.set_linewidth(2)
         spine.set_edgecolor("black")
 
-    melted_survshap_df = survshap_result_df.melt(
-        "times", var_name="features", value_name="values"
-    )
+    melted_survshap_df = survshap_result_df.melt("times", var_name="features", value_name="values")
     sns.lineplot(data=melted_survshap_df, x="times", y="values", hue="features", ax=ax)
 
     plt.legend(prop={"size": 12})

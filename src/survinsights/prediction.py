@@ -64,26 +64,23 @@ def predict(explainer, data, times=None, prediction_type="survival"):
                 else:
                     msg = "Unsupported model"
                     raise ValueError(msg)
-
         return pred_df
 
-    else:
-        pred = np.zeros((n_samples, n_times))
-        for i in range(n_samples):
-            for j in range(n_times):
-                time_j = times[j]
-                if "sksurv" in explainer.model.__module__:
-                    pred[i, j] = preds[i](time_j)
-                elif "pycox" in explainer.model.__module__:
-                    surv_pred_i = preds[i].values
-                    time_pred_i = preds.index.values
-                    idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
-                    pred[i, j] = surv_pred_i[idx_time_ij]
-                else:
-                    msg = "Unsupported model"
-                    raise ValueError(msg)
-
-        return pred
+    pred = np.zeros((n_samples, n_times))
+    for i in range(n_samples):
+        for j in range(n_times):
+            time_j = times[j]
+            if "sksurv" in explainer.model.__module__:
+                pred[i, j] = preds[i](time_j)
+            elif "pycox" in explainer.model.__module__:
+                surv_pred_i = preds[i].values
+                time_pred_i = preds.index.values
+                idx_time_ij = (np.abs(time_pred_i - time_j)).argmin()
+                pred[i, j] = surv_pred_i[idx_time_ij]
+            else:
+                msg = "Unsupported model"
+                raise ValueError(msg)
+    return pred
 
 
 def plot_prediction(pred, prediction_type):

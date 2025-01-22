@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-
 from survinsights import performance
+
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
 
 def permutation_feature_importance(
@@ -49,9 +49,7 @@ def permutation_feature_importance(
     expanded_feats_name = expand_feature_names(explainer, features_df.columns.tolist())
     feat_importance_df = pd.DataFrame(columns=["feat", "times", "perf"])
     for feature_group in expanded_feats_name:
-        original_name = (
-            feature_group[0] if isinstance(feature_group, list) else feature_group
-        )
+        original_name = feature_group[0] if isinstance(feature_group, list) else feature_group
 
         permuted_perf = get_permuted_performance(
             explainer,
@@ -73,13 +71,9 @@ def permutation_feature_importance(
         )
 
     if output_type == "loss":
-        feat_importance_df = add_full_model_performance(
-            feat_importance_df, eval_times, base_performance
-        )
+        feat_importance_df = add_full_model_performance(feat_importance_df, eval_times, base_performance)
 
-    feat_importance_df[["times", "perf"]] = feat_importance_df[["times", "perf"]].apply(
-        pd.to_numeric
-    )
+    feat_importance_df[["times", "perf"]] = feat_importance_df[["times", "perf"]].apply(pd.to_numeric)
 
     return feat_importance_df
 
@@ -111,9 +105,7 @@ def expand_feature_names(explainer, features_names):
     return expanded_feats_name
 
 
-def get_permuted_performance(
-    explainer, features_df, surv_labels, eval_times, feature_group, n_perm, metric
-):
+def get_permuted_performance(explainer, features_df, surv_labels, eval_times, feature_group, n_perm, metric):
     """
     Compute performance after permuting feature(s).
 
@@ -174,20 +166,14 @@ def permute_feature(features_df, feature_names):
     permuted_features_df = features_df.copy()
     if isinstance(feature_names, list):
         # categorical feature
-        permuted_features_df[feature_names[1:]] = np.random.permutation(
-            permuted_features_df[feature_names[1:]]
-        )
+        permuted_features_df[feature_names[1:]] = np.random.permutation(permuted_features_df[feature_names[1:]])
     else:
         # numeric feature
-        permuted_features_df[feature_names] = np.random.permutation(
-            permuted_features_df[feature_names]
-        )
+        permuted_features_df[feature_names] = np.random.permutation(permuted_features_df[feature_names])
     return permuted_features_df
 
 
-def update_feature_importance_df(
-    feat_importance_df, feat_name, eval_times, base_perf, permuted_perf, output_type
-):
+def update_feature_importance_df(feat_importance_df, feat_name, eval_times, base_perf, permuted_perf, output_type):
     """
     Update the feature importance DataFrame with computed values.
 
@@ -212,13 +198,9 @@ def update_feature_importance_df(
             Updated feature importance DataFrame.
     """
     if output_type == "ratio":
-        importance_feat = np.stack(
-            ([feat_name] * len(eval_times), eval_times, base_perf / permuted_perf)
-        ).T
+        importance_feat = np.stack(([feat_name] * len(eval_times), eval_times, base_perf / permuted_perf)).T
     else:
-        importance_feat = np.stack(
-            ([feat_name] * len(eval_times), eval_times, permuted_perf)
-        ).T
+        importance_feat = np.stack(([feat_name] * len(eval_times), eval_times, permuted_perf)).T
 
     return pd.concat(
         [
@@ -247,9 +229,7 @@ def add_full_model_performance(feat_importance_df, eval_times, base_performance)
     pd.DataFrame
             Updated feature importance DataFrame with full model performance.
     """
-    full_model_feat = np.stack(
-        (["full_model"] * len(eval_times), eval_times, base_performance)
-    ).T
+    full_model_feat = np.stack((["full_model"] * len(eval_times), eval_times, base_performance)).T
     return pd.concat(
         [
             feat_importance_df,

@@ -1,3 +1,14 @@
+__all__ = [
+    "accumulated_local_effects_plots",
+    "plot_ale",
+    "feature_interaction",
+    "plot_feature_interaction",
+    "partial_dependence_plots",
+    "plot_pdp",
+    "permutation_feature_importance",
+    "plot_pfi",
+]
+
 from survinsights.global_explaination._ale import (
     accumulated_local_effects_plots,
     plot_ale,

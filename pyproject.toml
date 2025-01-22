@@ -29,14 +29,14 @@ classifiers = [
   "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "numpy",
-    "pandas",
-    "scipy",
-    "scikit-learn",
-    "matplotlib",
-    "seaborn",
-    "lifelines",
-    "shap"
+  "lifelines",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "shap",
 ]
 
 [project.urls]
@@ -44,6 +44,11 @@ Documentation = "https://github.com/TeamHeKA/survInterpretability#README"
 Issues = "https://github.com/TeamHeKA/survInterpretability/issues"
 Source = "https://github.com/TeamHeKA/survInterpretability"
 
-
 [tool.hatch.build.targets.sdist]
 include = [ "/src" ]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"src/survinsights/explainer.py" = ["N801"]
+"src/survinsights/global_explaination/_ale.py" = ["N806"]
+"src/survinsights/global_explaination/_pdp.py" = ["N806"]
+"src/survinsights/performance.py" = ["PLR2004"]

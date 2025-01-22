@@ -84,15 +84,13 @@ class explainer:
             self.times = times
 
         self.encoders = encoders
-        if encoders is not None:
+        if encoders:
             self.cate_feat_names = list(encoders.keys())
-            numeric_feat_names = []
-            for feat_name in features_df.columns.values:
-                if not np.array(
-                    [cate_feat in feat_name for cate_feat in self.cate_feat_names]
-                ).any():
-                    numeric_feat_names.append(feat_name)
-            self.numeric_feat_names = numeric_feat_names
+            self.numeric_feat_names = [
+                feat_name
+                for feat_name in features_df.columns.values
+                if not np.array([cate_feat in feat_name for cate_feat in self.cate_feat_names]).any()
+            ]
         else:
             self.cate_feat_names = None
             self.numeric_feat_names = list(features_df.columns.values)

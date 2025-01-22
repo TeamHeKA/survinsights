@@ -8,10 +8,10 @@ from sksurv.metrics import (
     cumulative_dynamic_auc,
 )
 
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-
 from survinsights.prediction import predict
 from survinsights.utils import convert_surv_label_structarray
+
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
 
 def evaluate(explainer, data, label, times=None, metric="brier_score"):
@@ -49,9 +49,7 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
     res = np.zeros(n_times)
     if metric == "c_index":
         for j in range(n_times):
-            res[j] = concordance_index_censored(
-                survival_indicator, survival_time, -surv_pred[:, j]
-            )[0]
+            res[j] = concordance_index_censored(survival_indicator, survival_time, -surv_pred[:, j])[0]
 
     elif metric == "brier_score":
         label_st = convert_surv_label_structarray(label)
@@ -60,9 +58,7 @@ def evaluate(explainer, data, label, times=None, metric="brier_score"):
     elif metric == "auc":
         label_st = convert_surv_label_structarray(label)
         for j in range(n_times):
-            res[j] = cumulative_dynamic_auc(
-                label_st, label_st, -surv_pred[:, j], times[j]
-            )[0]
+            res[j] = cumulative_dynamic_auc(label_st, label_st, -surv_pred[:, j], times[j])[0]
 
     return pd.DataFrame(data=np.stack([times, res]).T, columns=["times", "perf"])
 
@@ -100,8 +96,7 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
         if len(xlim) != 2:
             msg = "xlim should be tuple of size 2"
             raise ValueError(msg)
-        else:
-            xlim_left, xlim_right = xlim
+        xlim_left, xlim_right = xlim
     else:
         xlim_left, xlim_right = ax.get_xlim()
 
@@ -109,8 +104,7 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
         if len(ylim) != 2:
             msg = "ylim should be tuple of size 2"
             raise ValueError(msg)
-        else:
-            ylim_lower, ylim_upper = ylim
+        ylim_lower, ylim_upper = ylim
     elif metric == "c_index":
         ylim_lower, ylim_upper = 0, 1
     elif metric == "brier_score":

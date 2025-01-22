@@ -1,3 +1,13 @@
+__all__ = [
+    "individual_conditional_expectation",
+    "individual_conditional_expectation_2d",
+    "plot_ice",
+    "plot_survlime",
+    "survlime",
+    "plot_survshap",
+    "survshap",
+]
+
 from survinsights.local_explaination._ice import (
     individual_conditional_expectation,
     individual_conditional_expectation_2d,

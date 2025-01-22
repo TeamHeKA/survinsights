@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-
 from survinsights.prediction import predict
+
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
 
 def individual_conditional_expectation(
@@ -44,19 +44,13 @@ def individual_conditional_expectation(
 
     predictions = predict(explainer, ice_features_df, prediction_type=prediction_type)
 
-    ice_results_df = construct_ice_result_dataframe(
-        predictions, expl_feat_space, num_samples, expl_feat_name_ext
-    )
+    ice_results_df = construct_ice_result_dataframe(predictions, expl_feat_space, num_samples, expl_feat_name_ext)
 
     if explained_feature_name not in explainer.numeric_feat_names:
         encoder = explainer.encoders[explained_feature_name]
-        encoded_expl_f_name = encoder.get_feature_names_out(
-            [explained_feature_name]
-        ).tolist()
+        encoded_expl_f_name = encoder.get_feature_names_out([explained_feature_name]).tolist()
         encoded_feat_value = ice_results_df[encoded_expl_f_name].values
-        ice_results_df[explained_feature_name] = encoder.inverse_transform(
-            encoded_feat_value
-        ).flatten()
+        ice_results_df[explained_feature_name] = encoder.inverse_transform(encoded_feat_value).flatten()
         ice_results_df = ice_results_df.drop(columns=encoded_expl_f_name)
 
     return ice_results_df
@@ -91,25 +85,19 @@ def individual_conditional_expectation_2d(
 
     predictions = predict(explainer, ice_features_df, prediction_type=prediction_type)
 
-    ice_results_df = construct_ice_result_dataframe(
-        predictions, expl_feats_space, num_samples, expt_feats_name_ext
-    )
+    ice_results_df = construct_ice_result_dataframe(predictions, expl_feats_space, num_samples, expt_feats_name_ext)
     for expl_f_name in explained_feature_names:
         if expl_f_name not in explainer.numeric_feat_names:
             encoder = explainer.encoders[expl_f_name]
             encoded_expl_f_name = encoder.get_feature_names_out([expl_f_name]).tolist()
             encoded_feat_value = ice_results_df[encoded_expl_f_name].values
-            ice_results_df[expl_f_name] = encoder.inverse_transform(
-                encoded_feat_value
-            ).flatten()
+            ice_results_df[expl_f_name] = encoder.inverse_transform(encoded_feat_value).flatten()
 
     return ice_results_df
 
 
 # Utility functions for ICE computations
-def prepare_ice_data(
-    features_df, explained_feature_name, explainer, num_samples, num_grid_points
-):
+def prepare_ice_data(features_df, explained_feature_name, explainer, num_samples, num_grid_points):
     """
     Prepare data for ICE computation for a single feature.
 
@@ -135,16 +123,12 @@ def prepare_ice_data(
         expl_feat_idx = features_df.columns.get_loc(explained_feature_name)
         sub_feats_val = features_df[:num_samples].values
         expl_feat_val = sub_feats_val[:, expl_feat_idx]
-        expl_feat_space = np.linspace(
-            min(expl_feat_val), max(expl_feat_val), num_grid_points
-        )
+        expl_feat_space = np.linspace(min(expl_feat_val), max(expl_feat_val), num_grid_points)
         feats_val_ext = np.repeat(sub_feats_val, len(expl_feat_space), axis=0)
         feats_val_ext[:, expl_feat_idx] = np.tile(expl_feat_space, num_samples)
         expl_feat_name_ext = [explained_feature_name]
     else:
-        expl_feat_name_ext = [
-            col for col in features_df.columns if explained_feature_name in col
-        ]
+        expl_feat_name_ext = [col for col in features_df.columns if explained_feature_name in col]
         expl_feat_idx = [features_df.columns.get_loc(col) for col in expl_feat_name_ext]
         sub_feats_val = features_df[:num_samples].values
         expl_feat_space = features_df[expl_feat_name_ext].drop_duplicates().values
@@ -183,13 +167,9 @@ def prepare_2d_ice_data(features_df, explained_feature_names, explainer, num_sam
             expl_feat_names_ext.append(expl_f_name)
             expl_feature_indices.append(features_df.columns.get_loc(expl_f_name))
         else:
-            cate_feat_name_ext = [
-                col for col in features_df.columns if expl_f_name in col
-            ]
+            cate_feat_name_ext = [col for col in features_df.columns if expl_f_name in col]
             expl_feat_names_ext.extend(cate_feat_name_ext)
-            expl_feature_indices.extend(
-                [features_df.columns.get_loc(col) for col in cate_feat_name_ext]
-            )
+            expl_feature_indices.extend([features_df.columns.get_loc(col) for col in cate_feat_name_ext])
 
     expl_feats_space = features_df[expl_feat_names_ext].drop_duplicates().values
     sub_feats_val = features_df[:num_samples].values
@@ -201,9 +181,7 @@ def prepare_2d_ice_data(features_df, explained_feature_names, explainer, num_sam
     return features_df_ext, expl_feats_space, expl_feat_names_ext
 
 
-def construct_ice_result_dataframe(
-    predictions, explained_feature_space, num_samples, explained_feature_name_ext
-):
+def construct_ice_result_dataframe(predictions, explained_feature_space, num_samples, explained_feature_name_ext):
     """
     Construct the ICE DataFrame from predictions.
 
@@ -226,9 +204,7 @@ def construct_ice_result_dataframe(
     ice_df = pd.DataFrame(columns=["id", "times", "pred", *explained_feature_name_ext])
     for i in range(num_samples):
         for j, value in enumerate(explained_feature_space):
-            prediction_subset = predictions[
-                predictions.id == float(i * len(explained_feature_space) + j)
-            ]
+            prediction_subset = predictions[predictions.id == float(i * len(explained_feature_space) + j)]
             for k in range(prediction_subset.shape[0]):
                 ice_df.loc[len(ice_df)] = [
                     i,
@@ -260,25 +236,16 @@ def plot_ice(explainer, ice_results_df, sample_id=0, xvar="Time", ylim=None):
         spine.set_linewidth(2)
         spine.set_edgecolor("black")
 
-    explained_feature_name = next(
-        col
-        for col in ice_results_df.columns.values
-        if col not in ["id", "times", "pred"]
-    )
+    explained_feature_name = next(col for col in ice_results_df.columns.values if col not in ["id", "times", "pred"])
     if xvar == "Time":
         if explained_feature_name in explainer.numeric_feat_names:
             unique_values = np.unique(ice_results_df[explained_feature_name].values)
-            normalized_values = (unique_values - min(unique_values)) / (
-                max(unique_values) - min(unique_values)
-            )
-            cmap = mpl.cm.ScalarMappable(
-                norm=mpl.colors.Normalize(0.0, max(unique_values)), cmap="BrBG"
-            )
+            normalized_values = (unique_values - min(unique_values)) / (max(unique_values) - min(unique_values))
+            cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(unique_values)), cmap="BrBG")
 
             for i, value in enumerate(unique_values):
                 subset = ice_results_df[
-                    (ice_results_df.id == sample_id)
-                    & (ice_results_df[explained_feature_name] == value)
+                    (ice_results_df.id == sample_id) & (ice_results_df[explained_feature_name] == value)
                 ]
                 sns.lineplot(
                     data=subset,
@@ -288,29 +255,17 @@ def plot_ice(explainer, ice_results_df, sample_id=0, xvar="Time", ylim=None):
                     ax=ax,
                 )
 
-            plt.colorbar(
-                cmap, ax=ax, orientation="vertical", label=explained_feature_name
-            )
+            plt.colorbar(cmap, ax=ax, orientation="vertical", label=explained_feature_name)
         else:
-            subset = ice_results_df[ice_results_df.id == sample_id].sort_values(
-                by=explained_feature_name
-            )
-            sns.lineplot(
-                data=subset, x="times", y="pred", hue=explained_feature_name, ax=ax
-            )
+            subset = ice_results_df[ice_results_df.id == sample_id].sort_values(by=explained_feature_name)
+            sns.lineplot(data=subset, x="times", y="pred", hue=explained_feature_name, ax=ax)
     else:
         unique_times = np.unique(ice_results_df["times"].values)
-        normalized_times = (unique_times - min(unique_times)) / (
-            max(unique_times) - min(unique_times)
-        )
-        cmap = mpl.cm.ScalarMappable(
-            norm=mpl.colors.Normalize(0.0, max(unique_times)), cmap="BrBG"
-        )
+        normalized_times = (unique_times - min(unique_times)) / (max(unique_times) - min(unique_times))
+        cmap = mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0.0, max(unique_times)), cmap="BrBG")
 
         for i, time in enumerate(unique_times):
-            subset = ice_results_df[
-                (ice_results_df.id == sample_id) & (ice_results_df["times"] == time)
-            ]
+            subset = ice_results_df[(ice_results_df.id == sample_id) & (ice_results_df["times"] == time)]
             sns.lineplot(
                 data=subset,
                 x=explained_feature_name,
@@ -332,9 +287,7 @@ def plot_ice(explainer, ice_results_df, sample_id=0, xvar="Time", ylim=None):
         plt.xlabel(explained_feature_name)
     # plt.xlabel("Time")
     plt.ylabel("Survival prediction")
-    plt.title(
-        f"ICE for feature {explained_feature_name} of observation id = {sample_id}"
-    )
+    plt.title(f"ICE for feature {explained_feature_name} of observation id = {sample_id}")
     plt.savefig(
         f"ICE_feature_{explained_feature_name}_of_id={sample_id}.pdf",
         bbox_inches="tight",

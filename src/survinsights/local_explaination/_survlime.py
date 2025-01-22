@@ -6,9 +6,9 @@ import sklearn
 from scipy.optimize import minimize
 from sksurv.nonparametric import nelson_aalen_estimator
 
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-
 from survinsights.prediction import predict
+
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
 
 def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
@@ -36,13 +36,8 @@ def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
     baseline_chf += regularization_factor
 
     explained_sample_df = features_df.iloc[[sample_id]]
-    neighbors, scaled_neighbors = generate_neighbors(
-        explainer, explained_sample_df, num_neighbors
-    )
-    model_chf = (
-        predict(explainer, neighbors, unique_times, prediction_type="chf")
-        + regularization_factor
-    )
+    neighbors, scaled_neighbors = generate_neighbors(explainer, explained_sample_df, num_neighbors)
+    model_chf = predict(explainer, neighbors, unique_times, prediction_type="chf") + regularization_factor
     distance_weights, adjustment_weights = compute_weights(scaled_neighbors, model_chf)
 
     args = (
@@ -62,9 +57,7 @@ def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
         options={"gtol": 1e-8},
     ).x
 
-    return format_survlime_results(
-        features_df.columns, optimized_coefs, explained_sample_df
-    )
+    return format_survlime_results(features_df.columns, optimized_coefs, explained_sample_df)
 
 
 def generate_neighbors(explainer, explained_sample_df, num_neighbors):
@@ -109,22 +102,15 @@ def generate_neighbors(explainer, explained_sample_df, num_neighbors):
             idx_ext += 1
         else:
             cate_fname_ext = [col for col in fnames_ext if fname in col]
-            cate_feat_counts = (
-                data.groupby(cate_fname_ext).value_counts().reset_index(name="counts")
-            )
-            sampled_values = cate_feat_counts.sample(
-                num_neighbors, replace=True, weights="counts", random_state=1
-            )[cate_fname_ext].values
+            cate_feat_counts = data.groupby(cate_fname_ext).value_counts().reset_index(name="counts")
+            sampled_values = cate_feat_counts.sample(num_neighbors, replace=True, weights="counts", random_state=1)[
+                cate_fname_ext
+            ].values
             neighbor_df[cate_fname_ext] = sampled_values
             scale_neighbor_df[cate_fname_ext] = sampled_values
-            cond = (
-                scale_neighbor_df[cate_fname_ext]
-                == explained_sample_df[cate_fname_ext].values
-            ).all(axis="columns")
+            cond = (scale_neighbor_df[cate_fname_ext] == explained_sample_df[cate_fname_ext].values).all(axis="columns")
             if np.sum(explained_sample_df[cate_fname_ext].values) == 0:
-                scale_neighbor_df.loc[~cond, cate_fname_ext] = [1] + [0] * (
-                    len(cate_fname_ext) - 1
-                )
+                scale_neighbor_df.loc[~cond, cate_fname_ext] = [1] + [0] * (len(cate_fname_ext) - 1)
             else:
                 scale_neighbor_df.loc[~cond, cate_fname_ext] = 0
             # reset scaler for categorical features
@@ -180,9 +166,7 @@ def compute_baseline_chf(survival_labels):
         survival_labels[:, 0],
         survival_labels[:, 1].astype(bool),
     )
-    unique_times, baseline_chf = nelson_aalen_estimator(
-        survival_indicators, survival_times
-    )
+    unique_times, baseline_chf = nelson_aalen_estimator(survival_indicators, survival_times)
 
     return unique_times[:-1], baseline_chf[:-1]
 
@@ -247,9 +231,7 @@ def survlime_objective(
             Computed objective function value.
     """
     dt = unique_times[1:] - unique_times[:-1]
-    log_diff = (
-        np.log(model_chf[:, :-1]) - np.log(baseline_chf[:-1]) - neighbors @ x[:, None]
-    )
+    log_diff = np.log(model_chf[:, :-1]) - np.log(baseline_chf[:-1]) - neighbors @ x[:, None]
     weighted_squared_error = (adjustment_weights[:, :-1] ** 2) * ((log_diff**2) * dt)
     return np.sum(distance_weights * weighted_squared_error.sum(axis=1))
 

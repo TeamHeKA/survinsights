@@ -1,19 +1,18 @@
+from itertools import combinations
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
-sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
-from itertools import combinations
 
 from survinsights.local_explaination import (
     individual_conditional_expectation,
     individual_conditional_expectation_2d,
 )
 
+sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
-def feature_interaction(
-    explainer, explained_feature_name=None, num_samples=10, num_grid_points=10
-):
+
+def feature_interaction(explainer, explained_feature_name=None, num_samples=10, num_grid_points=10):
     """
     Compute feature interaction for a given set of features.
 
@@ -37,8 +36,7 @@ def feature_interaction(
     feature_pairs = get_feature_name_pairs(all_feat_names, explained_feature_name)
 
     h_stat_dfs = [
-        calculate_interaction_statistic(explainer, pair, num_samples, num_grid_points)
-        for pair in feature_pairs
+        calculate_interaction_statistic(explainer, pair, num_samples, num_grid_points) for pair in feature_pairs
     ]
     return pd.concat(h_stat_dfs, ignore_index=True)
 
@@ -61,17 +59,11 @@ def get_feature_name_pairs(all_feat_names, expl_feat_name):
     """
     if expl_feat_name is None:
         return [list(pair) for pair in combinations(all_feat_names, 2)]
-    else:
-        return [
-            [expl_feat_name, f_name]
-            for f_name in all_feat_names
-            if f_name != expl_feat_name
-        ]
+
+    return [[expl_feat_name, f_name] for f_name in all_feat_names if f_name != expl_feat_name]
 
 
-def calculate_interaction_statistic(
-    explainer, fname_pair, num_samples, num_grid_points
-):
+def calculate_interaction_statistic(explainer, fname_pair, num_samples, num_grid_points):
     """
     Calculate the H-statistic for a pair of features over time.
 
@@ -95,14 +87,8 @@ def calculate_interaction_statistic(
     pdp_merged = compute_partial_dependence(ice_2d, fname_pair)
 
     for idx, fname in enumerate(fname_pair):
-        ice_single = individual_conditional_expectation(
-            explainer, fname, num_samples, num_grid_points
-        )
-        pdp_single = (
-            ice_single.groupby(["times", fname])
-            .mean()
-            .reset_index()[["times", fname, "pred"]]
-        )
+        ice_single = individual_conditional_expectation(explainer, fname, num_samples, num_grid_points)
+        pdp_single = ice_single.groupby(["times", fname]).mean().reset_index()[["times", fname, "pred"]]
         pdp_single = pdp_single.rename(columns={"pred": f"pred_{idx + 1}"})
         pdp_merged = pdp_merged.merge(pdp_single, on=["times", fname], how="inner")
 
@@ -148,12 +134,8 @@ def compute_h_statistic(pdp_df, fname_pair):
     pdp_df["variance"] = (pdp_df["pred"] - pdp_df["pred_1"] - pdp_df["pred_2"]) ** 2
     pdp_df["squared_corr"] = pdp_df["pred"] ** 2
 
-    variance_sum = (
-        pdp_df.groupby("times")["variance"].sum().reset_index(name="variance_sum")
-    )
-    corr_sum = (
-        pdp_df.groupby("times")["squared_corr"].sum().reset_index(name="corr_sum")
-    )
+    variance_sum = pdp_df.groupby("times")["variance"].sum().reset_index(name="variance_sum")
+    corr_sum = pdp_df.groupby("times")["squared_corr"].sum().reset_index(name="corr_sum")
 
     h_stat_df = variance_sum.merge(corr_sum, on="times")
     h_stat_df["H_stat"] = h_stat_df["variance_sum"] / h_stat_df["corr_sum"]
@@ -179,10 +161,7 @@ def plot_feature_interaction(h_stat_df):
         spine.set_edgecolor("black")
 
     for fname_pair in fname_pairs:
-        pair_df = h_stat_df[
-            (h_stat_df["fname_1"] == fname_pair[0])
-            & (h_stat_df["fname_2"] == fname_pair[1])
-        ]
+        pair_df = h_stat_df[(h_stat_df["fname_1"] == fname_pair[0]) & (h_stat_df["fname_2"] == fname_pair[1])]
         sns.lineplot(
             data=pair_df,
             x="times",
