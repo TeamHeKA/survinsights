@@ -1,8 +1,8 @@
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 
 sns.set(style='whitegrid', font="STIXGeneral", context='talk', palette='colorblind')
 
@@ -71,7 +71,7 @@ def individual_conditional_expectation_2d(explainer, explained_feature_names, nu
         DataFrame containing ICE values for the specified feature pair.
     """
 	features_df = explainer.features_df
-	ice_features_df, expl_feats_space, expt_feats_name_ext= prepare_2d_ice_data(features_df, explained_feature_names, 
+	ice_features_df, expl_feats_space, expt_feats_name_ext= prepare_2d_ice_data(features_df, explained_feature_names,
 																				explainer, num_samples)
 
 	predictions = predict(explainer, ice_features_df, prediction_type=prediction_type)

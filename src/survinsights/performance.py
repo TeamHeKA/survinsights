@@ -1,12 +1,14 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sksurv.metrics import concordance_index_censored, brier_score, cumulative_dynamic_auc
 import seaborn as sns
-import matplotlib.pyplot as plt
+from sksurv.metrics import brier_score, concordance_index_censored, cumulative_dynamic_auc
+
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
 from survinsights.prediction import predict
 from survinsights.utils import convert_surv_label_structarray
+
 
 def evaluate(explainer, data, label, times=None, metric="brier_score"):
 	"""
@@ -106,15 +108,14 @@ def plot_performance(perf, metric, xlim=None, ylim=None):
 			raise ValueError("ylim should be tuple of size 2")
 		else:
 			ylim_lower, ylim_upper = ylim
+	elif metric == "c_index":
+		ylim_lower, ylim_upper = 0, 1
+	elif metric == "brier_score":
+		ylim_lower, ylim_upper = 0, .5
+	elif metric == "auc":
+		ylim_lower, ylim_upper = 0, 1
 	else:
-		if metric == "c_index":
-			ylim_lower, ylim_upper = 0, 1
-		elif metric == "brier_score":
-			ylim_lower, ylim_upper = 0, .5
-		elif metric == "auc":
-			ylim_lower, ylim_upper = 0, 1
-		else:
-			raise ValueError("Only support output type c_index, brier_score, auc")
+		raise ValueError("Only support output type c_index, brier_score, auc")
 
 	ax.set_xlim(xlim_left, xlim_right)
 	ax.set_ylim(ylim_lower, ylim_upper)

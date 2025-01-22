@@ -1,6 +1,7 @@
 import numpy as np
 
-class explainer():
+
+class explainer:
 	"""
 	A class to define the explaination model
 

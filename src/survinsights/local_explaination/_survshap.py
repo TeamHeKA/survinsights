@@ -1,8 +1,10 @@
 import pandas as pd
 import seaborn as sns
+
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 import matplotlib.pyplot as plt
 import shap
+
 from survinsights.prediction import predict
 
 

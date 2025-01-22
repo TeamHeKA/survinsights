@@ -1,8 +1,10 @@
-import numpy as np
 from itertools import combinations
-from scipy.stats import kstest
+
+import numpy as np
 import pandas as pd
+from scipy.stats import kstest
 from sklearn.manifold import MDS
+
 
 def convert_surv_label_structarray(surv_label):
     """

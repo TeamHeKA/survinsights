@@ -1,13 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sksurv.nonparametric import nelson_aalen_estimator
-from scipy.optimize import minimize
 import seaborn as sns
 import sklearn
-import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+from sksurv.nonparametric import nelson_aalen_estimator
+
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
 from survinsights.prediction import predict
+
 
 def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
 	"""

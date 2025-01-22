@@ -1,7 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
 
