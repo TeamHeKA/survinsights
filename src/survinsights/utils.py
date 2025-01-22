@@ -28,16 +28,17 @@ def convert_surv_label_structarray(surv_label):
     for i in range(n_samples):
         surv_label_structarray.append((bool(surv_label[i, 1]), surv_label[i, 0]))
 
-    return np.rec.array(surv_label_structarray,
-                                          dtype=[('indicator', bool),
-                                                 ('time', np.float32)])
-
+    return np.rec.array(
+        surv_label_structarray, dtype=[("indicator", bool), ("time", np.float32)]
+    )
 
 
 def order_feature_value(explainer, selected_features):
     data = explainer.features_df.copy(deep=True)
     encoder = explainer.encoders[selected_features]
-    cate_features_ext = [feat for feat in data.columns.values if selected_features in feat]
+    cate_features_ext = [
+        feat for feat in data.columns.values if selected_features in feat
+    ]
     feat_values = encoder.inverse_transform(data[cate_features_ext]).flatten()
     data[selected_features] = feat_values
     group_values = np.unique(feat_values).tolist()
@@ -56,9 +57,13 @@ def order_feature_value(explainer, selected_features):
                     dist_mat[idx1, idx2] += dist
                     dist_mat[idx2, idx1] += dist
             else:
-                cate_features_ext = [feat for feat in data.columns.values if pair_feat in feat]
+                cate_features_ext = [
+                    feat for feat in data.columns.values if pair_feat in feat
+                ]
                 encoder = explainer.encoders[pair_feat]
-                feat_values = encoder.inverse_transform(data[cate_features_ext]).flatten()
+                feat_values = encoder.inverse_transform(
+                    data[cate_features_ext]
+                ).flatten()
                 data[pair_feat] = feat_values
                 for pair in group_comb:
                     samp1 = data[data[selected_features] == pair[0]][pair_feat]
@@ -75,8 +80,9 @@ def order_feature_value(explainer, selected_features):
     n_components = 1
     mds = MDS(n_components=n_components)
     dist_reduced = mds.fit_transform(dist_mat).flatten()
-    dist_df = pd.DataFrame(np.array([np.array(group_values), dist_reduced]).T, columns=["groups", "dist"])
-    dist_df = dist_df.sort_values(by=['dist'])
+    dist_df = pd.DataFrame(
+        np.array([np.array(group_values), dist_reduced]).T, columns=["groups", "dist"]
+    )
+    dist_df = dist_df.sort_values(by=["dist"])
     encoder = explainer.encoders[selected_features]
     return encoder.transform(dist_df.groups.values.reshape((-1, 1))).toarray()
-
