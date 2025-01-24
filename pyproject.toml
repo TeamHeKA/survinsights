@@ -40,9 +40,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/TeamHeKA/survInterpretability#README"
-Issues = "https://github.com/TeamHeKA/survInterpretability/issues"
-Source = "https://github.com/TeamHeKA/survInterpretability"
+Documentation = "https://github.com/TeamHeKA/survinsights#README"
+Issues = "https://github.com/TeamHeKA/survinsights/issues"
+Source = "https://github.com/TeamHeKA/survinsights"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/survinsights/explainer.py" = ["N801"]

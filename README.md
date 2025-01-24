@@ -1,4 +1,4 @@
-# survInsights
+# survinsights
 
 [![PyPI version](https://img.shields.io/pypi/v/survinsights.svg)](https://pypi.org/project/survinsights/)
 [![PyPI Python versions](https://img.shields.io/pypi/pyversions/survinsights.svg)](https://pypi.org/project/survinsights/)
