@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from src.survinsights.prediction import predict
-from src.survinsights.utils import order_feature_value
+from survinsights.prediction import predict
+from survinsights.utils import order_feature_value
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
@@ -214,12 +214,13 @@ def finalize_ale(ale_diff_df, feat_name, explainer, grid_values, eval_times):
     """
     ALE_group_df = ale_diff_df.groupby(["groups", "times"]).mean().reset_index()[["groups", "times", "pred"]]
     n_times = len(eval_times)
-    if feat_name in explainer.cate_feat_names:
-        tmp_df = pd.DataFrame(
-            data=np.array([np.zeros(n_times), eval_times, np.zeros(n_times)]).T,
-            columns=["groups", "times", "pred"],
-        )
-        ALE_group_df = pd.concat([tmp_df, ALE_group_df])
+    if explainer.cate_feat_names is not None:
+        if feat_name in explainer.cate_feat_names:
+            tmp_df = pd.DataFrame(
+                data=np.array([np.zeros(n_times), eval_times, np.zeros(n_times)]).T,
+                columns=["groups", "times", "pred"],
+            )
+            ALE_group_df = pd.concat([tmp_df, ALE_group_df])
     groups_unique = np.unique(ALE_group_df["groups"].values)
     n_groups = len(groups_unique)
     ale_df = pd.DataFrame(columns=["groups", "times", "pred"])

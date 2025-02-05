@@ -33,7 +33,7 @@ def feature_interaction(explainer, explained_feature_name=None, num_samples=10, 
     pd.DataFrame
             DataFrame with H-statistic values for each feature interaction over time.
     """
-    all_feat_names = explainer.numeric_feat_names + explainer.cate_feat_names
+    all_feat_names = explainer.feat_names
     feature_pairs = get_feature_name_pairs(all_feat_names, explained_feature_name)
 
     h_stat_dfs = [

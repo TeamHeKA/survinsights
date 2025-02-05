@@ -6,7 +6,7 @@ import sklearn
 from scipy.optimize import minimize
 from sksurv.nonparametric import nelson_aalen_estimator
 
-from src.survinsights.prediction import predict
+from survinsights.prediction import predict
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
@@ -89,7 +89,7 @@ def generate_neighbors(explainer, explained_sample_df, num_neighbors):
     )
     scale_neighbor_df = neighbor_df.copy(deep=True)
 
-    feat_names = explainer.numeric_feat_names + explainer.cate_feat_names
+    feat_names = explainer.feat_names
     data = explainer.features_df
     scale, mean = fit_scaler(data)
 

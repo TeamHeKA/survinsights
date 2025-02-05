@@ -32,14 +32,15 @@ def survshap(explainer, new_data, sample_id=0):
         preprocessed_feats_df = pd.DataFrame()
         decoded_feat_names = explainer.feat_names
         for idx, f_name in enumerate(decoded_feat_names):
-            if f_name in explainer.cate_feat_names:
+            if f_name in explainer.numeric_feat_names:
+                preprocessed_feats_df[f_name] = feats_df[:, idx].flatten()
+            else:
                 feat_encoder = explainer.encoders[f_name]
                 feat_col_sel = feat_encoder.get_feature_names_out([f_name]).tolist()
                 preprocessed_feats_df[feat_col_sel] = feat_encoder.transform(
                     feats_df[:, idx].reshape((-1, 1))
                 ).toarray()
-            else:
-                preprocessed_feats_df[f_name] = feats_df[:, idx].flatten()
+                
         # sort the dataframe based on the order of encoded feature name in trained model
         preprocessed_feats_df = preprocessed_feats_df[explainer.features_df.columns.tolist()]
 
@@ -56,16 +57,16 @@ def survshap(explainer, new_data, sample_id=0):
     decoded_feat_names = explainer.feat_names
 
     for feat_name in explainer.feat_names:
-        if feat_name in explainer.cate_feat_names:
+        if feat_name in explainer.numeric_feat_names:
+            decoded_features_df[feat_name] = explainer.features_df[feat_name]
+            decoded_sel_sample_df[feat_name] = sel_sample_df[feat_name]
+        else:
             encoder = explainer.encoders[feat_name]
             encoded_feat_name = encoder.get_feature_names_out([feat_name])
             decoded_features_df[feat_name] = encoder.inverse_transform(
                 explainer.features_df[encoded_feat_name]
             ).flatten()
             decoded_sel_sample_df[feat_name] = encoder.inverse_transform(sel_sample_df[encoded_feat_name]).flatten()
-        else:
-            decoded_features_df[feat_name] = explainer.features_df[feat_name]
-            decoded_sel_sample_df[feat_name] = decoded_sel_sample_df[feat_name]
 
     # Support KernelSHAP
     shap_explainer = shap.KernelExplainer(preprocess_for_shap, decoded_features_df)

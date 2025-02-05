@@ -91,6 +91,8 @@ class explainer:
                 for feat_name in features_df.columns.values
                 if not np.array([cate_feat in feat_name for cate_feat in self.cate_feat_names]).any()
             ]
+            self.feat_names = self.numeric_feat_names + self.cate_feat_names
         else:
             self.cate_feat_names = None
             self.numeric_feat_names = list(features_df.columns.values)
+            self.feat_names = self.numeric_feat_names

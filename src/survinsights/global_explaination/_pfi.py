@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from src.survinsights import performance
+from survinsights import performance
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
