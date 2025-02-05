@@ -1,8 +1,10 @@
-import numpy as np
 from itertools import combinations
-from scipy.stats import kstest
+
+import numpy as np
 import pandas as pd
+from scipy.stats import kstest
 from sklearn.manifold import MDS
+
 
 def convert_surv_label_structarray(surv_label):
     """
@@ -20,17 +22,9 @@ def convert_surv_label_structarray(surv_label):
     surv_label_structarray : `np.ndarray`, shape=(n_samples, 2)
         Structured array of survival labels
     """
-    surv_label_structarray = []
-    n_samples = surv_label.shape[0]
+    surv_label_structarray = [(bool(surv_label[i, 1]), surv_label[i, 0]) for i in len(surv_label)]
 
-    for i in range(n_samples):
-        surv_label_structarray.append((bool(surv_label[i, 1]), surv_label[i, 0]))
-
-    surv_label_structarray = np.rec.array(surv_label_structarray,
-                                          dtype=[('indicator', bool),
-                                                 ('time', np.float32)])
-
-    return surv_label_structarray
+    return np.rec.array(surv_label_structarray, dtype=[("indicator", bool), ("time", np.float32)])
 
 
 def order_feature_value(explainer, selected_features):
@@ -75,8 +69,6 @@ def order_feature_value(explainer, selected_features):
     mds = MDS(n_components=n_components)
     dist_reduced = mds.fit_transform(dist_mat).flatten()
     dist_df = pd.DataFrame(np.array([np.array(group_values), dist_reduced]).T, columns=["groups", "dist"])
-    dist_df = dist_df.sort_values(by=['dist'])
+    dist_df = dist_df.sort_values(by=["dist"])
     encoder = explainer.encoders[selected_features]
-    ordered_groups = encoder.transform(dist_df.groups.values.reshape((-1, 1))).toarray()
-
-    return ordered_groups
+    return encoder.transform(dist_df.groups.values.reshape((-1, 1))).toarray()

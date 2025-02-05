@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "survinsights"
-version = "0.0.1"
+version = "0.0.2"
 description = "Interpretation of ML-based survival methods"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [
   { authors = "Lucas Ducrot", email = "lucas.ducrot@inria.fr"},
   { authors = "Van Tuan Nguyen", email = "van-tuan.nguyen@inria.fr"},
@@ -17,7 +17,7 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -29,21 +29,23 @@ classifiers = [
   "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "numpy",
-    "pandas",
-    "scipy",
-    "scikit-learn",
-    "matplotlib",
-    "seaborn",
-    "lifelines",
-    "shap"
+  "lifelines",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "shap",
 ]
 
 [project.urls]
-Documentation = "https://github.com/TeamHeKA/survInterpretability#README"
-Issues = "https://github.com/TeamHeKA/survInterpretability/issues"
-Source = "https://github.com/TeamHeKA/survInterpretability"
+Documentation = "https://github.com/TeamHeKA/survinsights#README"
+Issues = "https://github.com/TeamHeKA/survinsights/issues"
+Source = "https://github.com/TeamHeKA/survinsights"
 
-
-[tool.hatch.build.targets.sdist]
-include = [ "/src" ]
+[tool.ruff.lint.extend-per-file-ignores]
+"src/survinsights/explainer.py" = ["N801"]
+"src/survinsights/global_explaination/_ale.py" = ["N806"]
+"src/survinsights/global_explaination/_pdp.py" = ["N806"]
+"src/survinsights/performance.py" = ["PLR2004"]
