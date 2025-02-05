@@ -7,7 +7,7 @@ import sklearn
 import matplotlib.pyplot as plt
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 
-from survinsights.prediction import predict
+from src.survinsights.prediction import predict
 
 def survlime(explainer, features_df, num_neighbors=100, sample_id=0):
 	"""

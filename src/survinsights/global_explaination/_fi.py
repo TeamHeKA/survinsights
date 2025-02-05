@@ -4,7 +4,7 @@ import seaborn as sns
 sns.set(style='whitegrid',font="STIXGeneral",context='talk',palette='colorblind')
 from itertools import combinations
 
-from survinsights.local_explaination import individual_conditional_expectation, individual_conditional_expectation_2d
+from src.survinsights.local_explaination import individual_conditional_expectation, individual_conditional_expectation_2d
 
 
 def feature_interaction(explainer, explained_feature_name=None, num_samples=10, num_grid_points=10):
