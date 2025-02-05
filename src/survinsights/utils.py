@@ -22,7 +22,7 @@ def convert_surv_label_structarray(surv_label):
     surv_label_structarray : `np.ndarray`, shape=(n_samples, 2)
         Structured array of survival labels
     """
-    surv_label_structarray = [(bool(surv_label[i, 1]), surv_label[i, 0]) for i in len(surv_label)]
+    surv_label_structarray = [(bool(surv_label[i, 1]), surv_label[i, 0]) for i in range(len(surv_label))]
 
     return np.rec.array(surv_label_structarray, dtype=[("indicator", bool), ("time", np.float32)])
 
