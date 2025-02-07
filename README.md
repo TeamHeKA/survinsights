@@ -1,5 +1,6 @@
 # survinsights
 
+[![SWH](https://archive.softwareheritage.org/badge/origin/https://pypi.org/project/survinsights//)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://pypi.org/project/survinsights/)
 [![PyPI version](https://img.shields.io/pypi/v/survinsights.svg)](https://pypi.org/project/survinsights/)
 [![PyPI Python versions](https://img.shields.io/pypi/pyversions/survinsights.svg)](https://pypi.org/project/survinsights/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://spdx.org/licenses/MIT.html)
