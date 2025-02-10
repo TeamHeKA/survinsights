@@ -6,7 +6,7 @@ import sklearn
 from scipy.optimize import minimize
 from sksurv.nonparametric import nelson_aalen_estimator
 
-from survinsights.prediction import predict
+from src.survinsights.prediction import predict
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
