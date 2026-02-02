@@ -15,4 +15,4 @@ from src.survinsights.local_explaination._ice import (
 )
 from src.survinsights.local_explaination._survlime import plot_survlime, survlime
 from src.survinsights.local_explaination._survshap import plot_survshap, survshap
-from src.survinsights.local_explaination._survlongishap import survshap as survlongishap
+from src.survinsights.local_explaination._survlongishap import survshap_longi as survlongishap
