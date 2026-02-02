@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from survinsights.prediction import predict
+from src.survinsights.prediction import predict
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from survinsights.local_explaination import (
+from src.survinsights.local_explaination import (
     individual_conditional_expectation,
     individual_conditional_expectation_2d,
 )

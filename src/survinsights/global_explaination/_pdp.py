@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from survinsights.local_explaination import individual_conditional_expectation
+from src.survinsights.local_explaination import individual_conditional_expectation
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 

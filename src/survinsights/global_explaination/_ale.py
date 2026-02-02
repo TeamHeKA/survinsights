@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from survinsights.prediction import predict
-from survinsights.utils import order_feature_value
+from src.survinsights.prediction import predict
+from src.survinsights.utils import order_feature_value
 
 sns.set(style="whitegrid", font="STIXGeneral", context="talk", palette="colorblind")
 
