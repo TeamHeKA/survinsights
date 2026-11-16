@@ -102,8 +102,7 @@ def score(metric, survival_train, survival_test, estimates, times):
         for k in np.arange(n_eval_time):
             eval_time = times[k]
             at_risk = surv_time > eval_time
-            results[k] = np.mean(at_risk * (1 - estimates[:, k])**2 +
-                                 ~at_risk * surv_ind * estimates[:, k]**2)
+            results[k] = np.sum(at_risk * (1 - estimates[:, k])**2 + ~at_risk * surv_ind * estimates[:, k]**2) / np.sum(at_risk + ~at_risk * surv_ind)
 
 
     elif metric == "w_bs":

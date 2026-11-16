@@ -7,6 +7,8 @@ import random
 import os
 import yaml
 
+import sys
+sys.path.extend([".", ".."])
 from examples.learner.utils import plot_loss_evolution
 import examples.learner.Dynamic_DeepHit.import_data as impt
 from examples.learner.Dynamic_DeepHit.class_DeepLongitudinal import Model_Longitudinal_Attention
@@ -102,7 +104,7 @@ def f_get_risk_predictions(model, data_, data_mi_, pred_time, eval_time):
 class Dynamic_DeepHit_ext:
     def __init__(self, hparams=None):
         if hparams is None:
-            hparams_path = 'examples/learner/Dynamic_DeepHit/hparams.yaml'
+            hparams_path = '../examples/learner/Dynamic_DeepHit/hparams.yaml'
             with open(hparams_path) as f:
                 hparams = yaml.load(f, Loader=yaml.BaseLoader)
 
@@ -300,9 +302,9 @@ class Dynamic_DeepHit_ext:
         for p, p_time in enumerate(pred_time):
             pred_horizon = int(p_time)
             pred = _f_get_pred(self.model, data_, data_mi_, pred_horizon)
-            # tmp = (pred[:, k, pred_horizon:].T / (np.sum(pred[:, k, pred_horizon:], axis=1) + _EPSILON)).T
-            # surv.append(1 - np.cumsum(tmp, axis =1))
-            surv.append(pred[:, k, pred_horizon:])
+            tmp = (pred[:, k, pred_horizon:].T / (np.sum(pred[:, k, pred_horizon:], axis=1) + _EPSILON)).T
+            surv.append(1 - np.cumsum(tmp, axis =1))
+            # surv.append(pred[:, k, pred_horizon:])
 
         return surv
 

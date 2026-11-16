@@ -1,6 +1,8 @@
 import numpy as np
 import iisignature
 import torch
+import sys
+sys.path.extend([".", ".."])
 from examples.learner.coxprox import CoxProx
 from examples.learner.utils import score, plot_loss_evolution
 from sklearn.preprocessing import StandardScaler

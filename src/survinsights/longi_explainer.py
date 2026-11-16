@@ -29,9 +29,12 @@ class explainer():
 
 		self.model = model
 		self.model_name = model_name
-		# TODO: Check the availability of data, label
 		self.paths = paths
 		self.survival_labels = survival_labels
-		self.sf = model.predict_survival
-		self.risk = model.predict_hazard
+		if model_name.lower() == "dysurv":
+			self.sf = model.sf
+			self.risk = model.risk
+		else:
+			self.sf = model.predict_survival
+			self.risk = model.predict_hazard
 		self.static_feats = static_feats

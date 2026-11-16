@@ -20,7 +20,7 @@ def weighted_median(values, weights):
     # weighted median
     return values[cum_weights >= 0.5][0]
 
-def predict(explainer, longi_feat, pred_times=None, prediction_type="survival", static_feat=None):
+def coxsig_predict(explainer, longi_feat, pred_times=None, prediction_type="survival", static_feat=None):
 	"""
 	Calculate model prediction in a unified way
 
@@ -55,6 +55,16 @@ def predict(explainer, longi_feat, pred_times=None, prediction_type="survival", 
 		for j in np.arange(len(pred_times)):
 			pred_at_t = surv_preds[j].sum(axis=1) * time_interval
 			preds.append(pred_at_t)
+
+	if prediction_type == "survival_ind":
+		surv_preds = explainer.sf(longi_feat, pred_times, static_feat=static_feat)
+		preds = []
+		for j in np.arange(len(pred_times)):
+			preds.append(surv_preds[j])
+			# preds.append(surv_preds[j][:, ])
+
+		return np.array(preds)
+
 
 	if prediction_type == "med-survival":
 		surv_preds = explainer.sf(longi_feat, pred_times, static_feat=static_feat)
@@ -122,17 +132,115 @@ def ddh_predict(explainer, longi_feat, pred_times, prediction_type="survival", s
 		for j in np.arange(len(pred_times)):
 			pred_at_t = (surv_preds[j] * np.arange(1, surv_preds[j].shape[1] + 1)).sum(axis=1)
 			preds.append(pred_at_t)
+	
+	if prediction_type == "survival_ind":
+		surv_preds = explainer.sf(data, data_mi, pred_times * time_scale)
+		preds = []
+		for j in np.arange(len(pred_times)):
+			pred_at_t = surv_preds[j][:, 1]
+			preds.append(pred_at_t)
 
 	if prediction_type == "med-survival":
 		surv_preds = explainer.sf(data, data_mi, pred_times * time_scale)
 		preds = []
-		for j in np.arange(len(pred_times)):
-			p = surv_preds[j]
-			pred_at_t = []
-			for i in range(p.shape[0]):
-				pred_at_t.append(weighted_median(np.arange(p.shape[1]), p[i]))
-			preds.append(np.array(pred_at_t))
+		# for j in np.arange(len(pred_times)):
+		# 	p = surv_preds[j]
+		# 	pred_at_t = []
+		# 	for i in range(p.shape[0]):
+		# 		pred_at_t.append(weighted_median(np.arange(p.shape[1]), p[i]))
+		# 	preds.append(np.array(pred_at_t))
+		for j in range(len(pred_times)):
+			surv = np.asarray(surv_preds[j])
+			crossed = surv <= 0.5
+			median_idx = np.where(crossed.any(axis=1), crossed.argmax(axis=1), np.inf)
+			preds.append(median_idx / time_scale)
 	return np.array(preds).flatten()
+
+
+# ---------- Unified DySurv prediction ----------
+
+# ============================================================
+# Unified DySurv prediction
+# ============================================================
+
+def dysurv_predict(
+    explainer, longi_feat, pred_times,
+    prediction_type="survival", static_feat=None,
+    horizon=None,
+):
+    pred_times = np.atleast_1d(pred_times).astype(float)
+    survival = explainer.sf(
+        longi_feat, pred_times, static_feat=static_feat
+    )
+
+    times = np.asarray(explainer.model.sampling_times, dtype=float)
+
+    if prediction_type == "survival_ind":
+        return survival
+
+    preds = []
+
+    for j, t_p in enumerate(pred_times):
+        mask = times > t_p
+
+        grid = np.r_[t_p, times[mask]]
+        curves = np.column_stack([
+            np.ones(survival.shape[1]),
+            survival[j][:, mask],
+        ])
+
+        if prediction_type == "survival":
+            # Restricted mean residual survival time
+            pred = np.trapz(curves, grid, axis=1)
+
+        elif prediction_type == "med-survival":
+            # Median residual survival time
+            pred = np.full(curves.shape[0], np.inf)
+
+            for i, s in enumerate(curves):
+                crossed = np.flatnonzero(s <= 0.5)
+
+                if len(crossed) == 0:
+                    continue
+
+                k = crossed[0]
+
+                if k == 0:
+                    pred[i] = 0.0
+                else:
+                    t0, t1 = grid[k - 1:k + 1]
+                    s0, s1 = s[k - 1:k + 1]
+
+                    if s0 == s1:
+                        t_median = t1
+                    else:
+                        t_median = t0 + (0.5 - s0) * (t1 - t0) / (s1 - s0)
+
+                    pred[i] = t_median - t_p
+
+        elif prediction_type == "risk":
+            if horizon is None:
+                target = times[-1]
+            else:
+                target = t_p + horizon
+
+            if target < t_p or target > times[-1]:
+                raise ValueError("Risk horizon must lie within the prediction grid.")
+
+            pred = 1.0 - np.array([
+                np.interp(target, grid, s)
+                for s in curves
+            ])
+
+        else:
+            raise ValueError(
+                f"Unsupported prediction type: {prediction_type}"
+            )
+
+        preds.append(pred)
+
+    return np.asarray(preds).flatten()
+
 
 def plot_prediction(pred, prediction_type):
 	"""

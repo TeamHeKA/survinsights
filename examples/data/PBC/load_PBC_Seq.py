@@ -16,7 +16,7 @@ from rpy2.robjects import default_converter
 
 def load():
     # load PBC Seq
-    robjects.r.source(os.getcwd() + "/examples/data/PBC/load_PBC_Seq.R")
+    robjects.r.source(os.getcwd() + "/../examples/data/PBC/load_PBC_Seq.R")
     static_feat_list = ['edema', 'age']
     longi_feat_list = ['serBilir', 'albumin', 'alkaline', 'SGOT', 'prothrombin']
     data_R = robjects.r["load"]()
@@ -67,12 +67,13 @@ def load():
     paths = torch.from_numpy(X.copy())
     surv_labels = np.array([surv_times, surv_inds], dtype=np.single).T
     bin_df = df_org[["id"] + static_feat_list].drop_duplicates("id").sort_values(by=['id'])
+    bin_df["id"] = np.arange(n_samples)
     static_feat = bin_df[static_feat_list].values
     time_scale = 1 / step
     ddh_info_sup = (longi_markers, static_feat_list, time_scale, bin_df)
 
     truncated_paths = truncate_paths_at_events(paths, sampling_times, surv_labels)
-    visualize(paths, truncated_paths, surv_labels, longi_feat_list, save_path="figures/PBC_data.pdf")
+    visualize(paths, truncated_paths, surv_labels, longi_feat_list, save_path="../figures/PBC_data.pdf")
 
     return truncated_paths, surv_labels, longi_feat_list, static_feat, static_feat_list, ddh_info_sup
 
@@ -103,7 +104,7 @@ def visualize(
     feat_list: list,
     sel_idx: int = 1,
     save_path: str | None = "simu_data.pdf",
-    show: bool = True,
+    show: bool = False,
 ) -> None:
     """
     Visualize subject paths, feature importance, and survival histogram.
