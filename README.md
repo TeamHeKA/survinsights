@@ -57,16 +57,24 @@ The following components are used to reproduce the results reported in the DynSu
 
 ### Experimental Scripts
 
-- `examples/learner/`  
-  Survival models used in the paper (CoxSig, Dynamic DeepHit)
+The DynSurvX experiments currently support **18 configurations**, combining:
 
-- `examples/data/`  
-  Simulated and clinical datasets
+- **3 datasets:** Simulation (`simu`), PBC-Seq (`PBC`), and MSK-Chord (`MSK`).
+- **3 models:** CoxSig (`CoxSig`), Dynamic DeepHit (`DDH`), and DySurv (`DySurv`).
+- **2 prediction functions:** Expected remaining survival time (`survival`) and median residual survival time (`med-survival`).
 
-- `(dataset)_(mean|med)_(model).py`  
-  Scripts to generate explanations using:
-  - Expected remaining survival time (mean)
-  - Median residual survival time (median)
+Experiments can be run from the terminal using the unified script:
+
+```bash
+python scripts/longisurvshap_unified.py \
+    --dataset PBC \
+    --model CoxSig \
+    --prediction-function med-survival
+```
+
+Hyperparameters for each configuration are defined in `longisurvshap_experiments.json` and automatically loaded based on the selected dataset, model, and prediction function.
+
+The original `(dataset)_(mean|med)_(model).py` scripts are also available for individual experiments.
 
 ### Figure Reproduction
 

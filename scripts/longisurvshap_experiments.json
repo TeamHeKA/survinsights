@@ -1,0 +1,214 @@
+{
+  "defaults": {
+    "seed": 0,
+    "train_share": 0.8,
+    "n_eval_times": 3,
+    "n_explain": 200,
+    "explain_fraction": 0.75,
+    "survival_margin_dt": 10,
+    "progress_every": 20,
+    "n_split": 4,
+    "run_explanations": true
+  },
+  "simulation": {
+    "n_samples": 1000,
+    "n_sampling_times": 200,
+    "n_longi_feats": 5,
+    "n_static_feats": 3,
+    "end_time": 10,
+    "threshold": 12,
+    "coefs": [1, 0, 1, 0, 5, 0],
+    "coefs_mask": [1, 1, 1, 1, 1, 1],
+    "important_feat_mask": [0, 1, 0, 0, 0],
+    "theta": [0, -0.3, 0, 0.2, 0],
+    "hurst_list": [0.9, 0.45, 0.85, 0.35, 0.8]
+  },
+  "experiments": {
+    "MSK": {
+      "CoxSig": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 0.1, "delta_1": null, "delta_2": null},
+          "model_params": {"sig_level": 2, "alphas": 0.05, "max_iter": 100},
+          "source_file": "MSK_mean_CoxSig.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 0.1, "delta_1": null, "delta_2": null},
+          "model_params": {"sig_level": 2, "alphas": 0.05, "max_iter": 100},
+          "source_file": "MSK_med_CoxSig.py"
+        }
+      },
+      "DDH": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": null, "delta_1": null, "delta_2": null},
+          "model_params": {"reuse_checkpoint": true},
+          "source_file": "MSK_mean_DDH.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": null, "delta_1": null, "delta_2": null},
+          "model_params": {"reuse_checkpoint": true},
+          "source_file": "MSK_med_DDH.py"
+        }
+      },
+      "DySurv": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": null, "delta_2": null},
+          "model_params": {"num_durations": 10, "latent_dim": 20, "batch_size": 32, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "MSK_mean_DySurv.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": null, "delta_2": null},
+          "model_params": {"num_durations": 10, "latent_dim": 20, "batch_size": 32, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "MSK_med_DySurv.py"
+        }
+      }
+    },
+    "PBC": {
+      "CoxSig": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 0.01, "delta_1": 0.18, "delta_2": null},
+          "model_params": {"sig_level": 2, "alphas": 0.05, "max_iter": 100},
+          "source_file": "PBC_mean_CoxSig.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 0.01, "delta_1": 0.15, "delta_2": null},
+          "model_params": {"sig_level": 2, "alphas": 0.05, "max_iter": 100},
+          "source_file": "PBC_med_CoxSig.py"
+        }
+      },
+      "DDH": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": null, "delta_1": 0.19, "delta_2": null},
+          "model_params": {"reuse_checkpoint": true},
+          "source_file": "PBC_mean_DDH.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": null, "delta_1": 0.2, "delta_2": null},
+          "model_params": {"reuse_checkpoint": true},
+          "source_file": "PBC_med_DDH.py"
+        }
+      },
+      "DySurv": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.19, "delta_2": null},
+          "model_params": {"num_durations": 10, "latent_dim": 20, "batch_size": 32, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "PBC_mean_DySurv.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.25, 0.5],
+          "eval_quantile_step": 0.15,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.2, "delta_2": null},
+          "model_params": {"num_durations": 10, "latent_dim": 20, "batch_size": 32, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "PBC_med_DySurv.py"
+        }
+      }
+    },
+    "simu": {
+      "CoxSig": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.1, "delta_2": 0.25},
+          "model_params": {"sig_level": 2, "alphas": 0.3, "max_iter": 200},
+          "source_file": "simu_mean_CoxSig.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.09, "delta_2": null},
+          "model_params": {"sig_level": 2, "alphas": 0.3, "max_iter": 200},
+          "source_file": "simu_med_CoxSig.py"
+        }
+      },
+      "DDH": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 50.0, "delta_1": 0.09, "delta_2": null},
+          "model_params": {"reuse_checkpoint": false},
+          "source_file": "simu_mean_DDH.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": true, "reg": 0.1, "delta_1": 0.1, "delta_2": null},
+          "model_params": {"reuse_checkpoint": false},
+          "source_file": "simu_med_DDH.py"
+        }
+      },
+      "DySurv": {
+        "mean": {
+          "prediction_type": "survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.09, "delta_2": null},
+          "model_params": {"num_durations": 60, "latent_dim": 20, "batch_size": 64, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "simu_mean_DySurv.py"
+        },
+        "med": {
+          "prediction_type": "med-survival",
+          "quantile_pred_times": [0.5, 0.75],
+          "eval_quantile_step": 0.05,
+          "n_eval_times": 3,
+          "shap": {"n_split": 4, "intercept": false, "reg": 4.0, "delta_1": 0.09, "delta_2": null},
+          "model_params": {"num_durations": 60, "latent_dim": 20, "batch_size": 64, "epochs": 200, "patience": 20, "learning_rate": 0.001},
+          "source_file": "simu_med_DySurv.py"
+        }
+      }
+    }
+  }
+}
